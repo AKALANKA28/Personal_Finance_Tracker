@@ -28,7 +28,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-
+//
     @Override
     public User registerUser(User user) {
         // Encode the password before saving
