@@ -1,4 +1,4 @@
-package com.example.finance_tracker.security;
+package com.example.finance_tracker.filter;
 
 import com.example.finance_tracker.service.UserService;
 import com.example.finance_tracker.util.JwtUtil;
@@ -53,7 +53,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-            logger.error("Invalid JWT token", e); // Log the exception and proceed
+            logger.error("Invalid JWT token", e);
         }
         chain.doFilter(request, response);
     }

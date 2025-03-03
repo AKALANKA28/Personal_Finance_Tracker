@@ -44,8 +44,8 @@ public class AuthController {
     }
 
     // Authenticate a user and return a JWT token
-    @PostMapping("/authenticate")
-    public ResponseEntity<String> authenticateUser(@RequestBody User user) throws Exception {
+    @PostMapping("/login")
+    public ResponseEntity<String> authenticatedUser(@RequestBody User user) throws Exception {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
 
