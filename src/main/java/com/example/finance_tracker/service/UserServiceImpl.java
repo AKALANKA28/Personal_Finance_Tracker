@@ -34,6 +34,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         // Encode the password before saving
         String encodedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encodedPassword);
+
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            user.setRoles(List.of("ROLE_USER")); // Default role
+        }
+
         return userRepository.save(user);
     }
 
@@ -72,10 +77,12 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
+        List<String> roles = user.getRoles();
+
         // Convert the user's roles into GrantedAuthority objects
         List<GrantedAuthority> authorities = user.getRoles()
                 .stream()
-                .map(SimpleGrantedAuthority::new)
+                .map(role -> new SimpleGrantedAuthority(role))
                 .collect(Collectors.toList());
 
         return new org.springframework.security.core.userdetails.User(

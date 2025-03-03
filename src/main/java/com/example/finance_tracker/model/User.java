@@ -17,9 +17,6 @@ public class User {
     private String username;
     private String password;
     private String email;
-    private String role;
+    private List<String> roles;
 
-    public List<String> getRoles() {
-        return Collections.singletonList(role); // Convert the role to a list
-    }
 }
