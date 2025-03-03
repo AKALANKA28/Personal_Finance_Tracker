@@ -4,7 +4,9 @@ import com.example.finance_tracker.model.User;
 import com.example.finance_tracker.service.UserService;
 import com.example.finance_tracker.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -69,11 +71,12 @@ public class AuthController {
         if (userService.deleteUser(id)) {
             return ResponseEntity.ok("User deleted successfully!");
         }
-        return ResponseEntity.notFound().build();
+        return new ResponseEntity<>("User not found",HttpStatus.NOT_FOUND);
     }
 
     // Get all users
     @GetMapping("/")
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // Restrict to admins only
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
@@ -85,5 +88,11 @@ public class AuthController {
         Optional<User> user = userService.getUserById(id);
         return user.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/admin/dashboard")
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // Only admins can access this method
+    public String adminDashboard() {
+        return "Welcome to the Admin Dashboard!";
     }
 }
