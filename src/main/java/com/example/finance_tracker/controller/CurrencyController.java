@@ -4,6 +4,7 @@ import com.example.finance_tracker.model.Currency;
 import com.example.finance_tracker.service.CurrencyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,12 +19,14 @@ public class CurrencyController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // Only admins can add currencies
     public ResponseEntity<Currency> addCurrency(@RequestBody Currency currency) {
         Currency newCurrency = currencyService.addCurrency(currency);
         return ResponseEntity.ok(newCurrency);
     }
 
     @PutMapping("/{currencyCode}/update-rate")
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // Only admins can update exchange rates
     public ResponseEntity<Void> updateExchangeRate(
             @PathVariable String currencyCode,
             @RequestParam double exchangeRate) {
@@ -32,6 +35,7 @@ public class CurrencyController {
     }
 
     @GetMapping("/convert")
+    @PreAuthorize("#userId == authentication.principal.id") // Users can only convert currency for themselves
     public ResponseEntity<Double> convertCurrency(
             @RequestParam String userId,
             @RequestParam String fromCurrency,

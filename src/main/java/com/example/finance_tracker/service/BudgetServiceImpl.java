@@ -2,13 +2,14 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.Budget;
 import com.example.finance_tracker.repository.BudgetRepository;
+import com.example.finance_tracker.util.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
-@Service
+@Service("budgetService")
 public class BudgetServiceImpl implements BudgetService {
 
     private final BudgetRepository budgetRepository;
@@ -41,6 +42,13 @@ public class BudgetServiceImpl implements BudgetService {
     @Override
     public void checkBudgetExceeded(String userId) {
         // Logic to check if the budget is exceeded and send notifications
+    }
+
+    public boolean isOwner(String budgetId, String userId) {
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new ResourceNotFoundException("Budget not found"));
+
+        return budget.getUserId().equals(userId); // Check if the user owns the budget
     }
 
 //    @Override

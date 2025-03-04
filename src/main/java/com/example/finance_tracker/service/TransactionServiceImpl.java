@@ -2,13 +2,14 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.Transaction;
 import com.example.finance_tracker.repository.TransactionRepository;
+import com.example.finance_tracker.util.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
 
-@Service
+@Service( "transactionService")
 public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionRepository transactionRepository;
@@ -48,4 +49,18 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public List<Transaction> getTransactionsByTags(String userId, List<String> tags) {
         return transactionRepository.findByUserIdAndTagsIn(userId, Collections.singleton(tags));    }
+
+    @Override
+    public Transaction getTransactionById(String id) {
+        return transactionRepository.findById(id).orElse(null);
+    }
+
+    public boolean isOwner(String transactionId, String userId) {
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
+
+        return transaction.getUserId().equals(userId); // Check if the user owns the transaction
+    }
+
+
 }

@@ -2,6 +2,7 @@ package com.example.finance_tracker.controller;
 
 import com.example.finance_tracker.model.Report;
 import com.example.finance_tracker.service.ReportService;
+import com.example.finance_tracker.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,9 @@ import java.util.Date;
 public class ReportController {
 
     private final ReportService reportService;
+
+    @Autowired
+    private TransactionService transactionService;
 
     @Autowired
     public ReportController(ReportService reportService) {
