@@ -51,7 +51,7 @@ public class BudgetController {
     }
 
     @PostMapping("/user/{userId}/check-budget")
-    @PreAuthorize("#userId == authentication.principal.id") // Users can only check their own budgets
+    @PreAuthorize("#userId == authentication.principal.id")
     public ResponseEntity<Void> checkBudgetExceeded(@PathVariable String userId) {
         budgetService.checkBudgetExceeded(userId);
         return ResponseEntity.ok().build();

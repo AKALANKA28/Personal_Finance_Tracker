@@ -33,4 +33,9 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setRead(true);
         notificationRepository.save(notification);
     }
+
+    @Override
+    public void sendNotification(String userId, String budgetExceeded, String message) {
+
+    }
 }
