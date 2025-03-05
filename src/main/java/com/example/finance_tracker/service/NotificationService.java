@@ -6,7 +6,10 @@ import java.util.List;
 
 public interface NotificationService {
     void sendNotification(Notification notification);
-    void sendNotification(String userId, String title, String message);
+    void sendEmailNotification(Notification notification); // New method for email notifications
     List<Notification> getNotificationsByUser(String userId);
     void markNotificationAsRead(String notificationId);
+
+    boolean isOwner(String notificationId, String userId);
+
 }

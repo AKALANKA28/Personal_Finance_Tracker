@@ -58,4 +58,39 @@ public class ExpenseController {
         List<Expense> expenses = expenseService.getExpensesByUserAndCategory(userId, category);
         return ResponseEntity.ok(expenses);
     }
+
+    // Fetch all expenses for a user in their preferred currency
+    @GetMapping("/user/{userId}/preferred-currency")
+    public ResponseEntity<List<Expense>> getExpensesByUserInPreferredCurrency(
+            @PathVariable String userId,
+            @RequestParam String preferredCurrency) {
+
+        List<Expense> expenses = expenseService.getExpensesByUserInPreferredCurrency(userId, preferredCurrency);
+        return ResponseEntity.ok(expenses);
+    }
+
+    // Fetch a single expense by ID and convert it to a preferred currency
+    @GetMapping("/{expenseId}/preferred-currency")
+    public ResponseEntity<Expense> getExpenseInPreferredCurrency(
+            @PathVariable String expenseId,
+            @RequestParam String preferredCurrency) {
+
+        Expense expense = expenseService.getExpenseById(expenseId);
+        Expense convertedExpense = expenseService.convertExpenseToPreferredCurrency(expense, preferredCurrency);
+        return ResponseEntity.ok(convertedExpense);
+    }
+
+    // Calculate total expenses for a user in the base currency
+    @GetMapping("/user/{userId}/total-base-currency")
+    public ResponseEntity<Double> getTotalExpensesInBaseCurrency(@PathVariable String userId) {
+        double totalExpenses = expenseService.calculateTotalExpensesInBaseCurrency(userId);
+        return ResponseEntity.ok(totalExpenses);
+    }
+
+    @GetMapping("/{expenseId}")
+    public ResponseEntity<Expense> getExpenseById(@PathVariable String expenseId) {
+        Expense expense = expenseService.getExpenseById(expenseId);
+        return ResponseEntity.ok(expense);
+    }
+
 }

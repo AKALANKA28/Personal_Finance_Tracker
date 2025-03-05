@@ -21,4 +21,7 @@ public class Expense {
     private boolean isRecurring;
     private String recurrencePattern;
     private Date endDate;
+    private String currencyCode;
+
+
 }

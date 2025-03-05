@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -24,6 +25,7 @@ public class BudgetController {
     @PreAuthorize("hasRole('ROLE_USER')") // Only authenticated users with ROLE_USER can access
     public ResponseEntity<Budget> setBudget(@RequestBody Budget budget, @RequestAttribute("authenticatedUserId") String authenticatedUserId) {
         budget.setUserId(authenticatedUserId);
+        budget.setCurrencyCode("USD");
         Budget newBudget = budgetService.setBudget(budget);
         return ResponseEntity.ok(newBudget);
     }
@@ -55,5 +57,25 @@ public class BudgetController {
     public ResponseEntity<Void> checkBudgetExceeded(@PathVariable String userId) {
         budgetService.checkBudgetExceeded(userId);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{userId}/recommendations")
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ROLE_ADMIN')") // Users can view their own recommendations; admins can view all
+    public ResponseEntity<Void> provideBudgetAdjustmentRecommendations(@PathVariable String userId) {
+        budgetService.provideBudgetAdjustmentRecommendations(userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/net-savings/{userId}/")
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ROLE_ADMIN')") // Users can view their own net savings; admins can view all
+    public ResponseEntity<Double> calculateNetSavings(
+            @PathVariable String userId,
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
+
+        double netSavings = budgetService.calculateNetSavings(userId, start, end);
+        return ResponseEntity.ok(netSavings);
     }
 }

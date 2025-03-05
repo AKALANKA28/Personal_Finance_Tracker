@@ -14,9 +14,12 @@ public class Notification {
     @Id
     private String id;
     private String userId;
+    private String title;
     private String message;
     private String type;
     private boolean read;
     private Date createdAt;
+    private String email;
+
 }
 

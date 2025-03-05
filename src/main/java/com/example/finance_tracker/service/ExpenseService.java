@@ -9,6 +9,15 @@ public interface ExpenseService {
     Expense updateExpense(Expense expense);
     boolean deleteExpense(String id);
     List<Expense> getExpensesByUser(String userId);
+
+    List<Expense> getExpensesByUserInPreferredCurrency(String userId, String preferredCurrency);
+
+    Expense convertExpenseToPreferredCurrency(Expense expense, String preferredCurrency);
+
     List<Expense> getExpensesByUserAndCategory(String userId, String category);
     boolean isOwner(String expenseId, String userId);
+
+    double calculateTotalExpensesInBaseCurrency(String userId);
+
+    Expense getExpenseById(String expenseId);
 }

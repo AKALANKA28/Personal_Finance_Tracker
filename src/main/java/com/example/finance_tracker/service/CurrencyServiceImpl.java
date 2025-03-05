@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
+import java.util.List;
+
 @Service
 public class CurrencyServiceImpl implements CurrencyService {
 
@@ -20,11 +23,12 @@ public class CurrencyServiceImpl implements CurrencyService {
     @Override
     @Transactional
     public Currency addCurrency(Currency currency) {
-        // Check if the currency already exists
         currencyRepository.findByCurrencyCode(currency.getCurrencyCode())
                 .ifPresent(c -> {
                     throw new IllegalArgumentException("Currency with code " + c.getCurrencyCode() + " already exists");
                 });
+        currency.setLastUpdated(new Date());
+
         return currencyRepository.save(currency);
     }
 
@@ -55,6 +59,18 @@ public class CurrencyServiceImpl implements CurrencyService {
 
         // Convert the amount
         return amount * (to.getExchangeRate() / from.getExchangeRate());
+    }
+
+    @Override
+    public List<Currency> getAllCurrencies() {
+        return currencyRepository.findAll();
+    }
+
+    @Override
+    public double convertToBaseCurrency(String currencyCode, double amount) {
+        Currency currency = currencyRepository.findByCurrencyCode(currencyCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Currency not found: " + currencyCode));
+        return amount / currency.getExchangeRate(); // Convert to base currency (e.g., USD)
     }
 
 }

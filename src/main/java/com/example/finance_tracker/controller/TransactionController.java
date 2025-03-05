@@ -70,4 +70,40 @@ public class TransactionController {
         List<Transaction> transactions = transactionService.getTransactionsByTags(userId, tags);
         return ResponseEntity.ok(transactions);
     }
+
+    @GetMapping("/{transactionId}")
+    @PreAuthorize("@transactionService.isOwner(#id, authentication.principal.id)") // Ensure the user is viewing their own transactions
+    public ResponseEntity<Transaction> getTransactionById(@PathVariable String transactionId) {
+        Transaction transaction = transactionService.getTransactionById(transactionId);
+        if (transaction == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(transaction);
+    }
+
+    @GetMapping("/user/{userId}/preferred-currency")
+    @PreAuthorize("#userId == authentication.principal.id") // Ensure the user is viewing their own transactions
+    public ResponseEntity<List<Transaction>> getTransactionsByUserInPreferredCurrency(
+            @PathVariable String userId,
+            @RequestParam String preferredCurrency) {
+
+        List<Transaction> transactions = transactionService.getTransactionsByUserInPreferredCurrency(userId, preferredCurrency);
+        return ResponseEntity.ok(transactions);
+    }
+
+    @GetMapping("/{transactionId}/preferred-currency")
+    @PreAuthorize("@transactionService.isOwner(#transactionId, authentication.principal.id)") // Ensure the user is viewing their own transactions
+    public ResponseEntity<Transaction> getTransactionInPreferredCurrency(
+            @PathVariable String transactionId,
+            @RequestParam String preferredCurrency) {
+
+        Transaction transaction = transactionService.getTransactionById(transactionId);
+        if (transaction == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Transaction convertedTransaction = transactionService.convertTransactionToPreferredCurrency(transaction, preferredCurrency);
+        return ResponseEntity.ok(convertedTransaction);
+    }
+
 }

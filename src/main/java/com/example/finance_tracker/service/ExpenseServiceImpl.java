@@ -7,15 +7,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-@Service( "expenseService")
+@Service("expenseService")
 public class ExpenseServiceImpl implements ExpenseService {
 
     private final ExpenseRepository expenseRepository;
+    private final CurrencyService currencyService;
 
     @Autowired
-    public ExpenseServiceImpl(ExpenseRepository expenseRepository) {
+    public ExpenseServiceImpl(ExpenseRepository expenseRepository, CurrencyService currencyService) {
         this.expenseRepository = expenseRepository;
+        this.currencyService = currencyService;
     }
 
     @Override
@@ -47,6 +50,42 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
+    public List<Expense> getExpensesByUserInPreferredCurrency(String userId, String preferredCurrency) {
+        List<Expense> expenses = expenseRepository.findByUserId(userId);
+
+        // Convert each expense's amount to the preferred currency
+        return expenses.stream()
+                .map(expense -> convertExpenseToPreferredCurrency(expense, preferredCurrency))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Expense convertExpenseToPreferredCurrency(Expense expense, String preferredCurrency) {
+        String originalCurrency = expense.getCurrencyCode();
+        double originalAmount = expense.getAmount();
+
+        // Convert the amount to the preferred currency
+        double convertedAmount = currencyService.convertCurrency(
+                expense.getUserId(), // userId
+                originalCurrency,   // fromCurrency
+                preferredCurrency, // toCurrency
+                originalAmount     // amount
+        );
+
+        // Create a new expense object with the converted amount and preferred currency
+        Expense convertedExpense = new Expense();
+        convertedExpense.setId(expense.getId());
+        convertedExpense.setUserId(expense.getUserId());
+        convertedExpense.setAmount(convertedAmount);
+        convertedExpense.setCurrencyCode(preferredCurrency);
+        convertedExpense.setCategory(expense.getCategory());
+        convertedExpense.setDate(expense.getDate());
+        convertedExpense.setDescription(expense.getDescription());
+
+        return convertedExpense;
+    }
+
+    @Override
     public List<Expense> getExpensesByUserAndCategory(String userId, String category) {
         return expenseRepository.findByUserIdAndCategory(userId, category);
     }
@@ -56,5 +95,20 @@ public class ExpenseServiceImpl implements ExpenseService {
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found"));
         return expense.getUserId().equals(userId); // Check if the user owns the expense
+    }
+
+    @Override
+    public double calculateTotalExpensesInBaseCurrency(String userId) {
+        List<Expense> expenses = expenseRepository.findByUserId(userId);
+
+        // Convert each expense's amount to the base currency and sum them up
+        return expenses.stream()
+                .mapToDouble(expense -> currencyService.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                .sum();
+    }
+
+    @Override
+    public Expense getExpenseById(String expenseId) {
+        return null;
     }
 }
