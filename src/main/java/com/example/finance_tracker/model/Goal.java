@@ -16,4 +16,7 @@ public class Goal {
     private double targetAmount;
     private double currentAmount = 0;
     private Date deadline;
+
+    public void setProgressPercentage(double progressPercentage) {
+    }
 }

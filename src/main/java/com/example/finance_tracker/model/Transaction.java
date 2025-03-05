@@ -5,6 +5,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -23,4 +24,6 @@ public class Transaction {
     private String currencyCode;
 
 
+    public Transaction(String userId, double allocation, String savings, LocalDate now, String s) {
+    }
 }
