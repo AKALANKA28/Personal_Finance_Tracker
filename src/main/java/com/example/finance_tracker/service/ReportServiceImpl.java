@@ -1,37 +1,172 @@
 package com.example.finance_tracker.service;
 
-import com.example.finance_tracker.model.Report;
-import com.example.finance_tracker.repository.ReportRepository;
+import com.example.finance_tracker.model.Budget;
+import com.example.finance_tracker.model.Expense;
+import com.example.finance_tracker.model.Income;
+import com.example.finance_tracker.repository.BudgetRepository;
+import com.example.finance_tracker.repository.ExpenseRepository;
+import com.example.finance_tracker.repository.IncomeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class ReportServiceImpl implements ReportService {
 
-    private final ReportRepository reportRepository;
+    private final BudgetRepository budgetRepository;
+    private final ExpenseRepository expenseRepository;
+    private final IncomeRepository incomeRepository;
+    private final CurrencyService currencyService;
 
     @Autowired
-    public ReportServiceImpl(ReportRepository reportRepository) {
-        this.reportRepository = reportRepository;
+    public ReportServiceImpl(BudgetRepository budgetRepository, ExpenseRepository expenseRepository,
+                             IncomeRepository incomeRepository, CurrencyService currencyService) {
+        this.budgetRepository = budgetRepository;
+        this.expenseRepository = expenseRepository;
+        this.incomeRepository = incomeRepository;
+        this.currencyService = currencyService;
     }
 
     @Override
-    public Report generateSpendingTrendReport(String userId, Date startDate, Date endDate) {
-        // Logic to generate spending trend report
-        return new Report(); // Replace with actual implementation
+    public Map<String, Object> generateSpendingTrendReport(String userId, LocalDate startDate, LocalDate endDate) {
+        // Fetch budgets
+        List<Budget> budgets = budgetRepository.findByUserId(userId);
+
+        // Calculate total income, expenses, and net savings (converted to base currency)
+        Map<String, Double> incomeExpenseData = calculateIncomeExpenseAndNetSavings(userId, startDate, endDate);
+        double totalIncome = incomeExpenseData.get("totalIncome");
+        double totalExpenses = incomeExpenseData.get("totalExpenses");
+        double netSavings = incomeExpenseData.get("netSavings");
+
+        // Calculate spending trends per category (converted to base currency)
+        Map<String, Map<String, Object>> spendingTrends = calculateSpendingTrends(userId, budgets, expenseRepository.findByUserIdAndDateBetween(userId, startDate, endDate), startDate, endDate);
+
+        // Prepare the report
+        return createReport(userId, startDate, endDate, totalIncome, totalExpenses, netSavings, spendingTrends);
     }
 
     @Override
-    public Report generateIncomeVsExpenseReport(String userId, Date startDate, Date endDate) {
-        // Logic to generate income vs expense report
-        return new Report(); // Replace with actual implementation
+    public Map<String, Object> generateIncomeVsExpenseReport(String userId, LocalDate startDate, LocalDate endDate) {
+        // Calculate total income, expenses, and net savings (converted to base currency)
+        Map<String, Double> incomeExpenseData = calculateIncomeExpenseAndNetSavings(userId, startDate, endDate);
+        double totalIncome = incomeExpenseData.get("totalIncome");
+        double totalExpenses = incomeExpenseData.get("totalExpenses");
+        double netSavings = incomeExpenseData.get("netSavings");
+
+        // Prepare the report
+        return createReport(userId, startDate, endDate, totalIncome, totalExpenses, netSavings, null);
     }
 
     @Override
-    public Report generateCategoryWiseReport(String userId, String category) {
-        // Logic to generate category-wise report
-        return new Report(); // Replace with actual implementation
+    public Map<String, Object> generateCategoryWiseReport(String userId, String category, LocalDate startDate, LocalDate endDate) {
+        // Fetch expenses for the specified category
+        List<Expense> expenses = expenseRepository.findByUserIdAndCategoryAndDateBetween(userId, category, startDate, endDate);
+
+        // Calculate total spending for the category (converted to base currency)
+        double totalSpending = calculateTotalExpenses(userId, expenses);
+
+        // Prepare the report
+        Map<String, Object> report = new HashMap<>();
+        report.put("userId", userId);
+        report.put("category", category);
+        report.put("startDate", startDate);
+        report.put("endDate", endDate);
+        report.put("totalSpending", totalSpending);
+
+        return report;
+    }
+
+
+
+
+    // Helper Methods
+
+    private Map<String, Double> calculateIncomeExpenseAndNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
+        // Fetch expenses and income
+        List<Expense> expenses = expenseRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
+        List<Income> incomes = incomeRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
+
+        // Calculate total income, expenses, and net savings (converted to base currency)
+        double totalIncome = calculateTotalIncome(userId, incomes);
+        double totalExpenses = calculateTotalExpenses(userId, expenses);
+        double netSavings = calculateNetSavings(totalIncome, totalExpenses);
+
+        // Return the results in a map
+        Map<String, Double> result = new HashMap<>();
+        result.put("totalIncome", totalIncome);
+        result.put("totalExpenses", totalExpenses);
+        result.put("netSavings", netSavings);
+        return result;
+    }
+
+    private double calculateTotalIncome(String userId, List<Income> incomes) {
+        return incomes.stream()
+                .mapToDouble(income -> currencyService.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
+                .sum();
+    }
+
+    private double calculateTotalExpenses(String userId, List<Expense> expenses) {
+        return expenses.stream()
+                .mapToDouble(expense -> currencyService.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                .sum();
+    }
+
+    private double calculateNetSavings(double totalIncome, double totalExpenses) {
+        return totalIncome - totalExpenses;
+    }
+
+    private Map<String, Map<String, Object>> calculateSpendingTrends(String userId, List<Budget> budgets, List<Expense> expenses, LocalDate startDate, LocalDate endDate) {
+        Map<String, Map<String, Object>> spendingTrends = new HashMap<>();
+
+        for (Budget budget : budgets) {
+            String category = budget.getCategory();
+            double totalSpending = expenses.stream()
+                    .filter(expense -> expense.getCategory().equals(category))
+                    .mapToDouble(expense -> currencyService.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                    .sum();
+
+            long numberOfMonths = startDate.until(endDate).toTotalMonths() + 1; // Include the start month
+            double averageSpending = totalSpending / numberOfMonths;
+
+            // Compare spending against budget
+            double budgetLimit = budget.getLimit();
+            String budgetStatus = totalSpending > budgetLimit ? "Exceeded" : "Within Budget";
+
+            // Add spending trend data for the category
+            spendingTrends.put(category, createCategoryData(totalSpending, averageSpending, budgetLimit, budgetStatus));
+        }
+
+        return spendingTrends;
+    }
+
+    private Map<String, Object> createCategoryData(double totalSpending, double averageSpending, double budgetLimit, String budgetStatus) {
+        Map<String, Object> categoryData = new HashMap<>();
+        categoryData.put("totalSpending", totalSpending);
+        categoryData.put("averageSpending", averageSpending);
+        categoryData.put("budgetLimit", budgetLimit);
+        categoryData.put("budgetStatus", budgetStatus);
+        return categoryData;
+    }
+
+    private Map<String, Object> createReport(String userId, LocalDate startDate, LocalDate endDate,
+                                             double totalIncome, double totalExpenses, double netSavings,
+                                             Map<String, Map<String, Object>> spendingTrends) {
+        Map<String, Object> report = new HashMap<>();
+        report.put("userId", userId);
+        report.put("startDate", startDate);
+        report.put("endDate", endDate);
+        report.put("totalIncome", totalIncome);
+        report.put("totalExpenses", totalExpenses);
+        report.put("netSavings", netSavings);
+
+        if (spendingTrends != null) {
+            report.put("spendingTrends", spendingTrends);
+        }
+
+        return report;
     }
 }

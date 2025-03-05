@@ -2,6 +2,7 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.Budget;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface BudgetService {
@@ -10,4 +11,7 @@ public interface BudgetService {
     boolean deleteBudget(String budgetId);
     List<Budget> getBudgetsByUser(String userId);
     void checkBudgetExceeded(String userId);
+    void provideBudgetAdjustmentRecommendations(String userId);
+
+    double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate);
 }

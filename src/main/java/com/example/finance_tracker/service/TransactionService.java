@@ -11,4 +11,10 @@ public interface TransactionService {
     List<Transaction> getTransactionsByUser(String userId);
     List<Transaction> getTransactionsByCategory(String userId, String category);
     List<Transaction> getTransactionsByTags(String userId, List<String> tags);
+
+    Transaction getTransactionById(String id);
+
+    List<Transaction> getTransactionsByUserInPreferredCurrency(String userId, String preferredCurrency);
+
+    Transaction convertTransactionToPreferredCurrency(Transaction transaction, String preferredCurrency);
 }

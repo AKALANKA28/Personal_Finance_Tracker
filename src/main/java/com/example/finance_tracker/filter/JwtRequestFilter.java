@@ -28,19 +28,20 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         this.jwtUtil = jwtUtil;
     }
 
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         final String authorizationHeader = request.getHeader("Authorization");
 
         String username = null;
+        String userId = null; // Add user ID
         String jwt = null;
 
         try {
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
                 jwt = authorizationHeader.substring(7);
                 username = jwtUtil.extractUsername(jwt);
+                userId = jwtUtil.extractUserId(jwt); // Extract user ID
             }
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -50,6 +51,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                             userDetails, null, userDetails.getAuthorities());
                     authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+                    // Set the authenticated username and user ID as request attributes
+                    request.setAttribute("authenticatedUsername", username);
+                    request.setAttribute("authenticatedUserId", userId); // Set user ID
                 }
             }
         } catch (Exception e) {

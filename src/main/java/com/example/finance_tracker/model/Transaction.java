@@ -20,5 +20,7 @@ public class Transaction {
     private String description;
     private Date date = new Date();
     private List<String> tags;
+    private String currencyCode;
+
 
 }

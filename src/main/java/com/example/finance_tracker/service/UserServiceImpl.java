@@ -2,6 +2,7 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.User;
 import com.example.finance_tracker.repository.UserRepository;
+import com.example.finance_tracker.util.UserNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -36,7 +38,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         user.setPassword(encodedPassword);
 
         if (user.getRoles() == null || user.getRoles().isEmpty()) {
-            user.setRoles(List.of("ROLE_USER")); // Default role
+            user.setRoles(Collections.singletonList("ROLE_USER"));
         }
 
         return userRepository.save(user);
@@ -44,7 +46,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public String authenticatedUser(String username, String password) {
-        return "";
+        return "Successfully Login";
     }
 
     @Override
@@ -69,7 +71,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public Optional<User> getUserById(String userId) {
-        return userRepository.findById(userId);
+        return Optional.ofNullable(userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId)));
     }
 
     @Override
@@ -77,17 +80,19 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
-        List<String> roles = user.getRoles();
+        // Ensure roles is not null
 
-        // Convert the user's roles into GrantedAuthority objects
-        List<GrantedAuthority> authorities = user.getRoles()
-                .stream()
-                .map(role -> new SimpleGrantedAuthority(role))
-                .collect(Collectors.toList());
+        User userDetails = new User();
+        userDetails.setId(user.getId());
+        userDetails.setUsername(user.getUsername());
+        userDetails.setPassword(user.getPassword());
+        userDetails.setRoles(user.getRoles());
 
-        return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPassword(),
-                authorities);
+        if (user.getRoles() == null) {
+            user.setRoles(Collections.singletonList("ROLE_USER")); // Default role
+        }
+        return userDetails;
+
+
     }
 }

@@ -2,10 +2,18 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.Report;
 
+import java.time.LocalDate;
 import java.util.Date;
+import java.util.Map;
 
 public interface ReportService {
-    Report generateSpendingTrendReport(String userId, Date startDate, Date endDate);
-    Report generateIncomeVsExpenseReport(String userId, Date startDate, Date endDate);
-    Report generateCategoryWiseReport(String userId, String category);
+//    Report generateSpendingTrendReport(String userId, Date startDate, Date endDate);
+//    Report generateIncomeVsExpenseReport(String userId, Date startDate, Date endDate);
+//    Report generateCategoryWiseReport(String userId, String category);
+
+    Map<String, Object> generateSpendingTrendReport(String userId, LocalDate startDate, LocalDate endDate);
+
+    Map<String, Object> generateIncomeVsExpenseReport(String userId, LocalDate startDate, LocalDate endDate);
+
+    Map<String, Object> generateCategoryWiseReport(String userId, String category, LocalDate startDate, LocalDate endDate);
 }
