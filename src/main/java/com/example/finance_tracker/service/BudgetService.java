@@ -14,4 +14,6 @@ public interface BudgetService {
     void provideBudgetAdjustmentRecommendations(String userId);
 
     double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate);
+
+    void allocateBudgetToGoal(String userId, String goalId, double amount);
 }

@@ -125,4 +125,13 @@ public class GoalController {
         goalService.checkAndNotifyNearOverdueGoals();
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{goalId}/link-budget")
+    @PreAuthorize("@goalService.isOwner(#goalId, authentication.principal.id)") // Ensure the user owns the goal
+    public ResponseEntity<Void> linkBudgetToGoal(
+            @PathVariable String goalId,
+            @RequestParam String budgetId) {
+        goalService.linkBudgetToGoal(goalId, budgetId);
+        return ResponseEntity.ok().build();
+    }
 }

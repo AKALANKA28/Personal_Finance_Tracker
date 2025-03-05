@@ -26,4 +26,8 @@ public interface GoalService {
     void checkAndNotifyNearOverdueGoals();
 
     List<Goal> getOverdueGoals(String userId);
+
+    void linkBudgetToGoal(String goalId, String budgetId);
+
+    void unlinkBudgetFromGoal(String goalId);
 }

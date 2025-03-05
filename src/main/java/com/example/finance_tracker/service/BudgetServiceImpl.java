@@ -1,9 +1,6 @@
 package com.example.finance_tracker.service;
 
-import com.example.finance_tracker.model.Budget;
-import com.example.finance_tracker.model.Expense;
-import com.example.finance_tracker.model.Income;
-import com.example.finance_tracker.model.Notification;
+import com.example.finance_tracker.model.*;
 import com.example.finance_tracker.repository.BudgetRepository;
 import com.example.finance_tracker.repository.ExpenseRepository;
 import com.example.finance_tracker.repository.IncomeRepository;
@@ -22,15 +19,17 @@ public class BudgetServiceImpl implements BudgetService {
     private final ExpenseRepository expenseRepository;
     private final IncomeRepository incomeRepository;
     private final CurrencyService currencyService;
+    private final GoalService goalService;
 
     @Autowired
     public BudgetServiceImpl(BudgetRepository budgetRepository, NotificationService notificationService,
-                             ExpenseRepository expenseRepository, IncomeRepository incomeRepository, CurrencyService currencyService) {
+                             ExpenseRepository expenseRepository, IncomeRepository incomeRepository, CurrencyService currencyService, GoalService goalService) {
         this.budgetRepository = budgetRepository;
         this.notificationService = notificationService;
         this.expenseRepository = expenseRepository;
         this.incomeRepository = incomeRepository;
         this.currencyService = currencyService;
+        this.goalService = goalService;
     }
 
     @Override
@@ -173,12 +172,42 @@ public class BudgetServiceImpl implements BudgetService {
     }
 
 
+    @Override
+    public void allocateBudgetToGoal(String userId, String goalId, double amount) {
+        Goal goal = goalService.getGoalById(goalId);
+        Budget budget = (Budget) budgetRepository
+
+                .findByUserIdAndCategory(userId, "Savings")
+                .orElseThrow(() -> new ResourceNotFoundException("Savings budget not found"));
+
+        // Ensure the allocation does not exceed the budget limit
+        if (amount > budget.getLimit()) {
+            throw new IllegalArgumentException("Allocation amount exceeds budget limit");
+        }
+
+        // Deduct the allocated amount from the budget
+        budget.setLimit(budget.getLimit() - amount);
+        budgetRepository.save(budget);
+
+        // Add the allocated amount to the goal
+        goal.setCurrentAmount(goal.getCurrentAmount() + amount);
+        goalService.updateGoal(goal);
+
+        // Notify the user
+        String message = String.format("Allocated %.2f %s from your budget to the goal '%s'",
+                amount, budget.getCurrencyCode(), goal.getName());
+        Notification notification = createNotification(userId, "Budget Allocation", message);
+        notificationService.sendNotification(notification);
+    }
+
     public boolean isOwner(String budgetId, String userId) {
         Budget budget = budgetRepository.findById(budgetId)
                 .orElseThrow(() -> new ResourceNotFoundException("Budget not found"));
 
         return budget.getUserId().equals(userId); // Check if the user owns the budget
     }
+
+
 
     private Notification createNotification(String userId, String title, String message) {
         Notification notification = new Notification();

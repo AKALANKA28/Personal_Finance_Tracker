@@ -1,8 +1,10 @@
 package com.example.finance_tracker.service;
 
+import com.example.finance_tracker.model.Budget;
 import com.example.finance_tracker.model.Goal;
 import com.example.finance_tracker.model.Notification;
 import com.example.finance_tracker.model.Transaction;
+import com.example.finance_tracker.repository.BudgetRepository;
 import com.example.finance_tracker.repository.GoalRepository;
 import com.example.finance_tracker.util.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +22,15 @@ public class GoalServiceImpl implements GoalService {
     private final GoalRepository goalRepository;
     private final TransactionService transactionService;
     private final NotificationService notificationService;
+    private final BudgetRepository budgetRepository;
 
     @Autowired
     public GoalServiceImpl(GoalRepository goalRepository, TransactionService transactionService,
-                           NotificationService notificationService) {
+                           NotificationService notificationService, BudgetRepository budgetRepository) {
         this.goalRepository = goalRepository;
         this.transactionService = transactionService;
         this.notificationService = notificationService;
+        this.budgetRepository = budgetRepository;
     }
 
     @Override
@@ -77,13 +81,21 @@ public class GoalServiceImpl implements GoalService {
         Goal goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
 
-        // Calculate total savings allocated to this goal
-        double totalSavings = transactionService.getTransactionsByUser(goal.getUserId()).stream()
-                .filter(transaction -> transaction.getCategory().equals("Savings"))
+        // Fetch the budget allocated to this goal (if any)
+        Budget budget = budgetRepository.findByGoalId(goalId)
+                .orElse(null);
+
+        // Calculate total savings allocated to this goal from transactions
+        double totalSavingsFromTransactions = transactionService.getTransactionsByUser(goal.getUserId()).stream()
+                .filter(transaction -> transaction.getCategory().equals("Savings") && transaction.getGoalId() != null && transaction.getGoalId().equals(goalId))
                 .mapToDouble(transaction -> transaction.getAmount())
                 .sum();
 
+        // Calculate total savings allocated to this goal from the budget (if a budget is linked)
+        double totalSavingsFromBudget = (budget != null) ? budget.getLimit() : 0;
+
         // Update the current amount
+        double totalSavings = totalSavingsFromTransactions + totalSavingsFromBudget;
         goal.setCurrentAmount(totalSavings);
 
         // Calculate progress percentage
@@ -99,6 +111,25 @@ public class GoalServiceImpl implements GoalService {
             notification.setUserId(goal.getUserId());
             notification.setTitle("Goal Achieved");
             notification.setMessage("Congratulations! You have achieved your goal: " + goal.getName());
+            notificationService.sendNotification(notification);
+            notificationService.sendEmailNotification(notification);
+        }
+
+        // Notify user if the goal is nearing its deadline
+        LocalDate today = LocalDate.now();
+        LocalDate deadline = LocalDate.parse(goal.getDeadline().toString());
+        long daysRemaining = ChronoUnit.DAYS.between(today, deadline);
+
+        if (daysRemaining <= 7 && daysRemaining > 0) {
+            String message = String.format(
+                    "Your goal '%s' is nearing its deadline. Only %d days remaining!",
+                    goal.getName(), daysRemaining
+            );
+
+            Notification notification = new Notification();
+            notification.setUserId(goal.getUserId());
+            notification.setTitle("Goal Nearing Deadline");
+            notification.setMessage(message);
             notificationService.sendNotification(notification);
             notificationService.sendEmailNotification(notification);
         }
@@ -208,4 +239,55 @@ public class GoalServiceImpl implements GoalService {
     public List<Goal> getOverdueGoals(String userId) {
         return goalRepository.findByUserIdAndDeadlineBeforeAndProgressPercentageLessThan(userId, new Date(), 100);
     }
+
+    @Override
+    public void linkBudgetToGoal(String goalId, String budgetId) {
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new ResourceNotFoundException("Budget not found"));
+
+        // Ensure the budget and goal belong to the same user
+        if (!budget.getUserId().equals(goal.getUserId())) {
+            throw new IllegalArgumentException("Budget and goal must belong to the same user");
+        }
+
+        // Link the budget to the goal
+        goal.setBudgetId(budgetId);
+        goalRepository.save(goal);
+
+        // Notify the user
+        String message = String.format("Budget '%s' has been linked to goal '%s'", budget.getCategory(), goal.getName());
+        Notification notification = createNotification(goal.getUserId(), "Budget Linked to Goal", message);
+        notificationService.sendNotification(notification);
+    }
+
+    @Override
+    public void unlinkBudgetFromGoal(String goalId) {
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
+
+        // Unlink the budget from the goal
+        goal.setBudgetId(null);
+        goalRepository.save(goal);
+
+        // Notify the user
+        String message = String.format("Budget has been unlinked from goal '%s'", goal.getName());
+        Notification notification = createNotification(goal.getUserId(), "Budget Unlinked from Goal", message);
+        notificationService.sendNotification(notification);
+    }
+
+
+
+    private Notification createNotification(String userId, String title, String message) {
+        Notification notification = new Notification();
+        notification.setUserId(userId);
+        notification.setTitle(title);
+        notification.setMessage(message);
+        notification.setRead(false);
+        return notification;
+    }
+
+
+
 }
