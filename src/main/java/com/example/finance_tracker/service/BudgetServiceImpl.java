@@ -1,9 +1,6 @@
 package com.example.finance_tracker.service;
 
-import com.example.finance_tracker.model.Budget;
-import com.example.finance_tracker.model.Expense;
-import com.example.finance_tracker.model.Income;
-import com.example.finance_tracker.model.Notification;
+import com.example.finance_tracker.model.*;
 import com.example.finance_tracker.repository.BudgetRepository;
 import com.example.finance_tracker.repository.ExpenseRepository;
 import com.example.finance_tracker.repository.IncomeRepository;
@@ -21,16 +18,19 @@ public class BudgetServiceImpl implements BudgetService {
     private final NotificationService notificationService;
     private final ExpenseRepository expenseRepository;
     private final IncomeRepository incomeRepository;
-    private final CurrencyService currencyService;
+    private final CurrencyConverter currencyConverter; // Updated dependency
+    private final GoalsAndSavingsService goalsAndSavingsService;
 
     @Autowired
     public BudgetServiceImpl(BudgetRepository budgetRepository, NotificationService notificationService,
-                             ExpenseRepository expenseRepository, IncomeRepository incomeRepository, CurrencyService currencyService) {
+                             ExpenseRepository expenseRepository, IncomeRepository incomeRepository,
+                             CurrencyConverter currencyConverter, GoalsAndSavingsService goalsAndSavingsService) {
         this.budgetRepository = budgetRepository;
         this.notificationService = notificationService;
         this.expenseRepository = expenseRepository;
         this.incomeRepository = incomeRepository;
-        this.currencyService = currencyService;
+        this.currencyConverter = currencyConverter; // Updated dependency
+        this.goalsAndSavingsService = goalsAndSavingsService;
     }
 
     @Override
@@ -71,8 +71,7 @@ public class BudgetServiceImpl implements BudgetService {
 
             // Calculate total expenses in the budget's currency
             double totalExpenses = expenses.stream()
-                    .mapToDouble(expense -> currencyService.convertCurrency(
-                            userId,
+                    .mapToDouble(expense -> currencyConverter.convertCurrency(
                             expense.getCurrencyCode(),
                             budget.getCurrencyCode(),
                             expense.getAmount()
@@ -111,11 +110,11 @@ public class BudgetServiceImpl implements BudgetService {
 
         // Convert all amounts to the base currency (e.g., USD)
         double totalIncome = incomes.stream()
-                .mapToDouble(income -> currencyService.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
+                .mapToDouble(income -> currencyConverter.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
                 .sum();
 
         double totalExpenses = expenses.stream()
-                .mapToDouble(expense -> currencyService.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
                 .sum();
 
         // Calculate net savings
@@ -127,11 +126,11 @@ public class BudgetServiceImpl implements BudgetService {
             // Calculate total spending for the budget category in the base currency
             double totalSpending = expenses.stream()
                     .filter(expense -> expense.getCategory().equals(budget.getCategory()))
-                    .mapToDouble(expense -> currencyService.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                    .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
                     .sum();
 
             // Convert the budget limit to the base currency
-            double budgetLimit = currencyService.convertToBaseCurrency(budget.getCurrencyCode(), budget.getLimit());
+            double budgetLimit = currencyConverter.convertToBaseCurrency(budget.getCurrencyCode(), budget.getLimit());
 
             if (totalSpending > budgetLimit * 1.1) { // Spending exceeds budget by 10%
                 recommendations.add(String.format("Consider increasing your budget for %s. Average spending: %.2f USD, Current budget: %.2f USD",
@@ -154,24 +153,56 @@ public class BudgetServiceImpl implements BudgetService {
         }
     }
 
+//    @Override
+//    public double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
+//        // Fetch total income and convert to base currency
+//        double totalIncome = incomeRepository.findByUserIdAndDateBetween(userId, startDate, endDate)
+//                .stream()
+//                .mapToDouble(income -> currencyConverter.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
+//                .sum();
+//
+//        // Fetch total expenses and convert to base currency
+//        double totalExpenses = expenseRepository.findByUserIdAndDateBetween(userId, startDate, endDate)
+//                .stream()
+//                .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+//                .sum();
+//
+//        // Calculate net savings
+//        double netSavings = totalIncome - totalExpenses;
+//
+//        // Allocate net savings to goals
+//        if (netSavings > 0) {
+//            goalsAndSavingsService.allocateSavings(userId, netSavings);
+//        }
+//
+//        return netSavings;
+//    }
+//
     @Override
-    public double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
-        // Fetch total income and convert to base currency
-        double totalIncome = incomeRepository.findByUserIdAndDateBetween(userId, startDate, endDate)
-                .stream()
-                .mapToDouble(income -> currencyService.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
-                .sum();
+    public void allocateBudgetToGoal(String userId, String goalId, double amount) {
+        Goal goal = goalsAndSavingsService.getGoalById(goalId);
+        Budget budget = (Budget) budgetRepository.findByUserIdAndCategory(userId, "Savings")
+                .orElseThrow(() -> new ResourceNotFoundException("Savings budget not found"));
 
-        // Fetch total expenses and convert to base currency
-        double totalExpenses = expenseRepository.findByUserIdAndDateBetween(userId, startDate, endDate)
-                .stream()
-                .mapToDouble(expense -> currencyService.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
-                .sum();
+        // Ensure the allocation does not exceed the budget limit
+        if (amount > budget.getLimit()) {
+            throw new IllegalArgumentException("Allocation amount exceeds budget limit");
+        }
 
-        // Calculate net savings
-        return totalIncome - totalExpenses;
+        // Deduct the allocated amount from the budget
+        budget.setLimit(budget.getLimit() - amount);
+        budgetRepository.save(budget);
+
+        // Add the allocated amount to the goal
+        goal.setCurrentAmount(goal.getCurrentAmount() + amount);
+        goalsAndSavingsService.updateGoal(goal);
+
+        // Notify the user
+        String message = String.format("Allocated %.2f %s from your budget to the goal '%s'",
+                amount, budget.getCurrencyCode(), goal.getName());
+        Notification notification = createNotification(userId, "Budget Allocation", message);
+        notificationService.sendNotification(notification);
     }
-
 
     public boolean isOwner(String budgetId, String userId) {
         Budget budget = budgetRepository.findById(budgetId)
@@ -189,9 +220,4 @@ public class BudgetServiceImpl implements BudgetService {
         notification.setRead(false);
         return notification;
     }
-
-
-
-
-
 }

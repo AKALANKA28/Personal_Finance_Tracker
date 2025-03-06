@@ -5,9 +5,11 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
+@Builder
 @Document(collection = "transactions")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @ToString
 public class Transaction {
@@ -15,12 +17,19 @@ public class Transaction {
     private String id;
     private String userId;
     private String type;
-    private String category;
     private double amount;
-    private String description;
-    private Date date = new Date();
-    private List<String> tags;
     private String currencyCode;
+    private String category;
+    private String source;
+    private Date date;
+    private String description;
+    private List<String> tags;
+    private String goalId;
 
+    private boolean IsRecurring;
+    private String recurrencePattern; // e.g., "daily", "weekly", "monthly"
+    private Date recurrenceEndDate;
 
+    public Transaction(String userId, double allocation, String savings, LocalDate now, String s) {
+    }
 }

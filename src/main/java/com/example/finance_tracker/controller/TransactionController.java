@@ -47,14 +47,14 @@ public class TransactionController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("#userId == authentication.principal.id") // Ensure the user is viewing their own transactions
+    @PreAuthorize("#userId == authentication.principal.id")
     public ResponseEntity<List<Transaction>> getTransactionsByUser(@PathVariable String userId) {
         List<Transaction> transactions = transactionService.getTransactionsByUser(userId);
         return ResponseEntity.ok(transactions);
     }
 
     @GetMapping("/user/{userId}/category/{category}")
-    @PreAuthorize("#userId == authentication.principal.id") // Ensure the user is viewing their own transactions
+    @PreAuthorize("#userId == authentication.principal.id")
     public ResponseEntity<List<Transaction>> getTransactionsByCategory(
             @PathVariable String userId,
             @PathVariable String category) {
@@ -63,7 +63,7 @@ public class TransactionController {
     }
 
     @GetMapping("/user/{userId}/tags")
-    @PreAuthorize("#userId == authentication.principal.id") // Ensure the user is viewing their own transactions
+    @PreAuthorize("#userId == authentication.principal.id")
     public ResponseEntity<List<Transaction>> getTransactionsByTags(
             @PathVariable String userId,
             @RequestParam List<String> tags) {
@@ -72,7 +72,7 @@ public class TransactionController {
     }
 
     @GetMapping("/{transactionId}")
-    @PreAuthorize("@transactionService.isOwner(#id, authentication.principal.id)") // Ensure the user is viewing their own transactions
+    @PreAuthorize("@transactionService.isOwner(#transactionId, authentication.principal.id)")
     public ResponseEntity<Transaction> getTransactionById(@PathVariable String transactionId) {
         Transaction transaction = transactionService.getTransactionById(transactionId);
         if (transaction == null) {
@@ -82,7 +82,7 @@ public class TransactionController {
     }
 
     @GetMapping("/user/{userId}/preferred-currency")
-    @PreAuthorize("#userId == authentication.principal.id") // Ensure the user is viewing their own transactions
+    @PreAuthorize("#userId == authentication.principal.id")
     public ResponseEntity<List<Transaction>> getTransactionsByUserInPreferredCurrency(
             @PathVariable String userId,
             @RequestParam String preferredCurrency) {
@@ -92,7 +92,7 @@ public class TransactionController {
     }
 
     @GetMapping("/{transactionId}/preferred-currency")
-    @PreAuthorize("@transactionService.isOwner(#transactionId, authentication.principal.id)") // Ensure the user is viewing their own transactions
+    @PreAuthorize("@transactionService.isOwner(#transactionId, authentication.principal.id)")
     public ResponseEntity<Transaction> getTransactionInPreferredCurrency(
             @PathVariable String transactionId,
             @RequestParam String preferredCurrency) {
@@ -104,6 +104,33 @@ public class TransactionController {
 
         Transaction convertedTransaction = transactionService.convertTransactionToPreferredCurrency(transaction, preferredCurrency);
         return ResponseEntity.ok(convertedTransaction);
+    }
+
+
+    @PostMapping("/recurring")
+//    @PreAuthorize("@transactionService.isOwner(#transaction.id, authentication.principal.id)")
+    public ResponseEntity<Transaction> createRecurringTransaction(@RequestBody Transaction transaction) {
+        transaction.setIsRecurring(true);
+        Transaction savedTransaction = transactionService.addTransaction(transaction);
+        return ResponseEntity.ok(savedTransaction);
+    }
+
+    @PutMapping("/recurring/{id}")
+    @PreAuthorize("@transactionService.isOwner(#transaction.id, authentication.principal.id)")
+    public ResponseEntity<Transaction> updateRecurringTransaction(
+            @PathVariable String id,
+            @RequestBody Transaction transaction) {
+        transaction.setId(id);
+        transaction.setIsRecurring(true);
+        Transaction updatedTransaction = transactionService.updateTransaction(transaction);
+        return ResponseEntity.ok(updatedTransaction);
+    }
+
+    @DeleteMapping("/recurring/{id}")
+    @PreAuthorize("@transactionService.isOwner(#id, authentication.principal.id)")
+    public ResponseEntity<Void> deleteRecurringTransaction(@PathVariable String id) {
+        transactionService.deleteTransaction(id);
+        return ResponseEntity.noContent().build();
     }
 
 }

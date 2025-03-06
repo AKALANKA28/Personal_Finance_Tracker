@@ -18,5 +18,6 @@ public class Budget {
     private Date endDate;
     private boolean notificationEnabled;
     private String currencyCode;
+    private String goalId;
 
 }

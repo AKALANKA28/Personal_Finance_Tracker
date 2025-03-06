@@ -13,12 +13,12 @@ import java.util.stream.Collectors;
 public class ExpenseServiceImpl implements ExpenseService {
 
     private final ExpenseRepository expenseRepository;
-    private final CurrencyService currencyService;
+    private final CurrencyConverter currencyConverter;
 
     @Autowired
-    public ExpenseServiceImpl(ExpenseRepository expenseRepository, CurrencyService currencyService) {
+    public ExpenseServiceImpl(ExpenseRepository expenseRepository, CurrencyConverter currencyConverter) {
         this.expenseRepository = expenseRepository;
-        this.currencyService = currencyService;
+        this.currencyConverter = currencyConverter;
     }
 
     @Override
@@ -65,12 +65,8 @@ public class ExpenseServiceImpl implements ExpenseService {
         double originalAmount = expense.getAmount();
 
         // Convert the amount to the preferred currency
-        double convertedAmount = currencyService.convertCurrency(
-                expense.getUserId(), // userId
-                originalCurrency,   // fromCurrency
-                preferredCurrency, // toCurrency
-                originalAmount     // amount
-        );
+        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount);
+
 
         // Create a new expense object with the converted amount and preferred currency
         Expense convertedExpense = new Expense();
@@ -103,7 +99,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         // Convert each expense's amount to the base currency and sum them up
         return expenses.stream()
-                .mapToDouble(expense -> currencyService.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
                 .sum();
     }
 

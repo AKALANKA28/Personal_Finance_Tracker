@@ -60,22 +60,22 @@ public class BudgetController {
     }
 
     @PostMapping("/{userId}/recommendations")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ROLE_ADMIN')") // Users can view their own recommendations; admins can view all
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ROLE_ADMIN')")
     public ResponseEntity<Void> provideBudgetAdjustmentRecommendations(@PathVariable String userId) {
         budgetService.provideBudgetAdjustmentRecommendations(userId);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/net-savings/{userId}/")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ROLE_ADMIN')") // Users can view their own net savings; admins can view all
-    public ResponseEntity<Double> calculateNetSavings(
-            @PathVariable String userId,
-            @RequestParam String startDate,
-            @RequestParam String endDate) {
-        LocalDate start = LocalDate.parse(startDate);
-        LocalDate end = LocalDate.parse(endDate);
-
-        double netSavings = budgetService.calculateNetSavings(userId, start, end);
-        return ResponseEntity.ok(netSavings);
-    }
+//    @GetMapping("/net-savings/{userId}/")
+//    @PreAuthorize("#userId == authentication.principal.id or hasRole('ROLE_ADMIN')")
+//    public ResponseEntity<Double> calculateNetSavings(
+//            @PathVariable String userId,
+//            @RequestParam String startDate,
+//            @RequestParam String endDate) {
+//        LocalDate start = LocalDate.parse(startDate);
+//        LocalDate end = LocalDate.parse(endDate);
+//
+//        double netSavings = budgetService.calculateNetSavings(userId, start, end);
+//        return ResponseEntity.ok(netSavings);
+//    }
 }

@@ -20,15 +20,23 @@ public class ReportServiceImpl implements ReportService {
     private final BudgetRepository budgetRepository;
     private final ExpenseRepository expenseRepository;
     private final IncomeRepository incomeRepository;
-    private final CurrencyService currencyService;
+    private final CurrencyConverter currencyConverter;
+    private final ExpenseService expenseService; // Inject ExpenseService
+    private final IncomeService incomeService;   // Inject IncomeService
+    private final GoalsAndSavingsService goalsAndSavingsService; // Inject GoalsAndSavingsService
 
     @Autowired
     public ReportServiceImpl(BudgetRepository budgetRepository, ExpenseRepository expenseRepository,
-                             IncomeRepository incomeRepository, CurrencyService currencyService) {
+                             IncomeRepository incomeRepository, CurrencyConverter currencyConverter,
+                             ExpenseService expenseService, IncomeService incomeService,
+                             GoalsAndSavingsService goalsAndSavingsService) {
         this.budgetRepository = budgetRepository;
         this.expenseRepository = expenseRepository;
         this.incomeRepository = incomeRepository;
-        this.currencyService = currencyService;
+        this.currencyConverter = currencyConverter;
+        this.expenseService = expenseService;
+        this.incomeService = incomeService;
+        this.goalsAndSavingsService = goalsAndSavingsService;
     }
 
     @Override
@@ -67,7 +75,7 @@ public class ReportServiceImpl implements ReportService {
         List<Expense> expenses = expenseRepository.findByUserIdAndCategoryAndDateBetween(userId, category, startDate, endDate);
 
         // Calculate total spending for the category (converted to base currency)
-        double totalSpending = calculateTotalExpenses(userId, expenses);
+        double totalSpending = expenseService.calculateTotalExpensesInBaseCurrency(userId); // Reuse existing method
 
         // Prepare the report
         Map<String, Object> report = new HashMap<>();
@@ -80,20 +88,13 @@ public class ReportServiceImpl implements ReportService {
         return report;
     }
 
-
-
-
     // Helper Methods
 
     private Map<String, Double> calculateIncomeExpenseAndNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
-        // Fetch expenses and income
-        List<Expense> expenses = expenseRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
-        List<Income> incomes = incomeRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
-
-        // Calculate total income, expenses, and net savings (converted to base currency)
-        double totalIncome = calculateTotalIncome(userId, incomes);
-        double totalExpenses = calculateTotalExpenses(userId, expenses);
-        double netSavings = calculateNetSavings(totalIncome, totalExpenses);
+        // Reuse existing methods to calculate totals
+        double totalIncome = incomeService.calculateTotalIncomeInBaseCurrency(userId); // Reuse existing method
+        double totalExpenses = expenseService.calculateTotalExpensesInBaseCurrency(userId); // Reuse existing method
+        double netSavings = goalsAndSavingsService.calculateNetSavings(userId, startDate, endDate); // Reuse existing method
 
         // Return the results in a map
         Map<String, Double> result = new HashMap<>();
@@ -103,22 +104,6 @@ public class ReportServiceImpl implements ReportService {
         return result;
     }
 
-    private double calculateTotalIncome(String userId, List<Income> incomes) {
-        return incomes.stream()
-                .mapToDouble(income -> currencyService.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
-                .sum();
-    }
-
-    private double calculateTotalExpenses(String userId, List<Expense> expenses) {
-        return expenses.stream()
-                .mapToDouble(expense -> currencyService.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
-                .sum();
-    }
-
-    private double calculateNetSavings(double totalIncome, double totalExpenses) {
-        return totalIncome - totalExpenses;
-    }
-
     private Map<String, Map<String, Object>> calculateSpendingTrends(String userId, List<Budget> budgets, List<Expense> expenses, LocalDate startDate, LocalDate endDate) {
         Map<String, Map<String, Object>> spendingTrends = new HashMap<>();
 
@@ -126,7 +111,7 @@ public class ReportServiceImpl implements ReportService {
             String category = budget.getCategory();
             double totalSpending = expenses.stream()
                     .filter(expense -> expense.getCategory().equals(category))
-                    .mapToDouble(expense -> currencyService.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                    .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
                     .sum();
 
             long numberOfMonths = startDate.until(endDate).toTotalMonths() + 1; // Include the start month
