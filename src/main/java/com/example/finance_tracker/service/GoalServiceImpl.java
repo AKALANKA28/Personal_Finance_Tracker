@@ -1,11 +1,10 @@
 package com.example.finance_tracker.service;
 
-import com.example.finance_tracker.model.Budget;
-import com.example.finance_tracker.model.Goal;
-import com.example.finance_tracker.model.Notification;
-import com.example.finance_tracker.model.Transaction;
+import com.example.finance_tracker.model.*;
 import com.example.finance_tracker.repository.BudgetRepository;
 import com.example.finance_tracker.repository.GoalRepository;
+import com.example.finance_tracker.repository.IncomeRepository;
+import com.example.finance_tracker.repository.TransactionRepository;
 import com.example.finance_tracker.util.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,14 +22,18 @@ public class GoalServiceImpl implements GoalService {
     private final TransactionService transactionService;
     private final NotificationService notificationService;
     private final BudgetRepository budgetRepository;
+    private final TransactionRepository transactionRepository;
+    private final IncomeRepository incomeRepository;
 
     @Autowired
     public GoalServiceImpl(GoalRepository goalRepository, TransactionService transactionService,
-                           NotificationService notificationService, BudgetRepository budgetRepository) {
+                           NotificationService notificationService, BudgetRepository budgetRepository, TransactionRepository transactionRepository, IncomeRepository incomeRepository) {
         this.goalRepository = goalRepository;
         this.transactionService = transactionService;
         this.notificationService = notificationService;
         this.budgetRepository = budgetRepository;
+        this.transactionRepository = transactionRepository;
+        this.incomeRepository = incomeRepository;
     }
 
     @Override
@@ -88,7 +91,7 @@ public class GoalServiceImpl implements GoalService {
         // Calculate total savings allocated to this goal from transactions
         double totalSavingsFromTransactions = transactionService.getTransactionsByUser(goal.getUserId()).stream()
                 .filter(transaction -> transaction.getCategory().equals("Savings") && transaction.getGoalId() != null && transaction.getGoalId().equals(goalId))
-                .mapToDouble(transaction -> transaction.getAmount())
+                .mapToDouble(Transaction::getAmount)
                 .sum();
 
         // Calculate total savings allocated to this goal from the budget (if a budget is linked)
@@ -158,6 +161,53 @@ public class GoalServiceImpl implements GoalService {
             // Update goal progress
             trackGoalProgress(goal.getId());
         }
+    }
+    @Override
+    public void allocateSavingsFromIncome(String userId, double savingsPercentage) {
+        if (savingsPercentage <= 0 || savingsPercentage > 100) {
+            throw new IllegalArgumentException("Savings percentage must be between 0 and 100");
+        }
+
+        // Fetch the user's total income
+        double totalIncome = incomeRepository.findByUserId(userId).stream()
+                .mapToDouble(Income::getAmount)
+                .sum();
+
+        // Calculate the savings amount
+        double savingsAmount = (totalIncome * savingsPercentage) / 100;
+
+        // Fetch the user's active goals
+        List<Goal> activeGoals = goalRepository.findByUserIdAndDeadlineAfter(userId, new Date());
+
+        // Allocate savings proportionally to each goal based on their target amounts
+        double totalTargetAmount = activeGoals.stream()
+                .mapToDouble(Goal::getTargetAmount)
+                .sum();
+
+        for (Goal goal : activeGoals) {
+            double allocation = (goal.getTargetAmount() / totalTargetAmount) * savingsAmount;
+
+            // Create a savings transaction
+            Transaction savingsTransaction = getTransaction(userId, goal, allocation);
+
+            transactionRepository.save(savingsTransaction);
+
+            // Update goal progress
+            trackGoalProgress(goal.getId());
+        }
+    }
+
+    private static Transaction getTransaction(String userId, Goal goal, double allocation) {
+        Transaction savingsTransaction = new Transaction();
+        savingsTransaction.setUserId(userId);
+        savingsTransaction.setType("Expense");
+        savingsTransaction.setAmount(allocation);
+        savingsTransaction.setCurrencyCode("USD"); // Default currency
+        savingsTransaction.setCategory("Savings");
+        savingsTransaction.setDate(new Date());
+        savingsTransaction.setDescription("Savings allocation for goal: " + goal.getName());
+        savingsTransaction.setGoalId(goal.getId());
+        return savingsTransaction;
     }
 
     @Override

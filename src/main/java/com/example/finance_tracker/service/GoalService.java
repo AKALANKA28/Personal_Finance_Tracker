@@ -11,6 +11,8 @@ public interface GoalService {
     void trackGoalProgress(String goalId);
     void allocateSavings(String userId, double amount);
 
+    void allocateSavingsFromIncome(String userId, double savingsPercentage);
+
     List<Goal> getGoalsByUser(String userId);
 
     Goal getGoalById(String goalId);
