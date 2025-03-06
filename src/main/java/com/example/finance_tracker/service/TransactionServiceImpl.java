@@ -16,15 +16,15 @@ import java.util.stream.Collectors;
 public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionRepository transactionRepository;
-    private final CurrencyService currencyService;
+    private final CurrencyConverter currencyConverter;
     private final IncomeService incomeService;
     private final ExpenseService expenseService;
 
     @Autowired
-    public TransactionServiceImpl(TransactionRepository transactionRepository, CurrencyService currencyService,
+    public TransactionServiceImpl(TransactionRepository transactionRepository, CurrencyConverter currencyConverter,
                                   IncomeService incomeService, ExpenseService expenseService) {
         this.transactionRepository = transactionRepository;
-        this.currencyService = currencyService;
+        this.currencyConverter = currencyConverter;
         this.incomeService = incomeService;
         this.expenseService = expenseService;
     }
@@ -43,17 +43,7 @@ public class TransactionServiceImpl implements TransactionService {
             income.setDate(transaction.getDate());
             incomeService.addIncome(income);
         } else if ("Expense".equalsIgnoreCase(transaction.getType())) {
-            Expense expense = new Expense();
-            expense.setUserId(transaction.getUserId());
-            expense.setAmount(transaction.getAmount());
-            expense.setCurrencyCode(transaction.getCurrencyCode());
-            expense.setCategory(transaction.getCategory());
-            expense.setDate(transaction.getDate());
-            expense.setDescription(transaction.getDescription());
-            expense.setTags(transaction.getTags());
-            expense.setRecurrencePattern(transaction.getRecurrencePattern());
-            expense.setRecurring(transaction.isIsRecurring());
-            expense.setEndDate(transaction.getRecurrenceEndDate());
+            Expense expense = getExpense(transaction);
 
             expenseService.addExpense(expense);
         } else {
@@ -61,6 +51,21 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         return savedTransaction;
+    }
+
+    private static Expense getExpense(Transaction transaction) {
+        Expense expense = new Expense();
+        expense.setUserId(transaction.getUserId());
+        expense.setAmount(transaction.getAmount());
+        expense.setCurrencyCode(transaction.getCurrencyCode());
+        expense.setCategory(transaction.getCategory());
+        expense.setDate(transaction.getDate());
+        expense.setDescription(transaction.getDescription());
+        expense.setTags(transaction.getTags());
+        expense.setRecurrencePattern(transaction.getRecurrencePattern());
+        expense.setRecurring(transaction.isIsRecurring());
+        expense.setEndDate(transaction.getRecurrenceEndDate());
+        return expense;
     }
 
     @Override
@@ -94,7 +99,6 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionRepository.findById(id).orElse(null);
     }
 
-
     public boolean isOwner(String transactionId, String userId) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
@@ -117,13 +121,8 @@ public class TransactionServiceImpl implements TransactionService {
         String originalCurrency = transaction.getCurrencyCode();
         double originalAmount = transaction.getAmount();
 
-        // Convert the amount to the preferred currency
-        double convertedAmount = currencyService.convertCurrency(
-                transaction.getUserId(),
-                originalCurrency,
-                preferredCurrency,
-                originalAmount
-        );
+        // Convert the amount to the preferred currency using CurrencyConverter
+        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount);
 
         // Create a new transaction object with the converted amount and preferred currency
         return getTransaction(transaction, preferredCurrency, convertedAmount);
@@ -141,7 +140,4 @@ public class TransactionServiceImpl implements TransactionService {
         convertedTransaction.setDescription(transaction.getDescription());
         return convertedTransaction;
     }
-
-
-
 }

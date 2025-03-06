@@ -13,12 +13,12 @@ import java.util.stream.Collectors;
 public class IncomeServiceImpl implements IncomeService {
 
     private final IncomeRepository incomeRepository;
-    private final CurrencyService currencyService;
+    private final CurrencyConverter currencyConverter; // Updated dependency
 
     @Autowired
-    public IncomeServiceImpl(IncomeRepository incomeRepository, CurrencyService currencyService) {
+    public IncomeServiceImpl(IncomeRepository incomeRepository, CurrencyConverter currencyConverter) {
         this.incomeRepository = incomeRepository;
-        this.currencyService = currencyService;
+        this.currencyConverter = currencyConverter; // Updated dependency
     }
 
     @Override
@@ -63,13 +63,8 @@ public class IncomeServiceImpl implements IncomeService {
         String originalCurrency = income.getCurrencyCode();
         double originalAmount = income.getAmount();
 
-        // Convert the amount to the preferred currency
-        double convertedAmount = currencyService.convertCurrency(
-                income.getUserId(),
-                originalCurrency,
-                preferredCurrency,
-                originalAmount
-        );
+        // Convert the amount to the preferred currency using CurrencyConverter
+        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount);
 
         // Create a new income object with the converted amount and preferred currency
         Income convertedIncome = new Income();
@@ -79,8 +74,6 @@ public class IncomeServiceImpl implements IncomeService {
         convertedIncome.setCurrencyCode(preferredCurrency);
         convertedIncome.setSource(income.getSource());
         convertedIncome.setDate(income.getDate());
-//        convertedIncome.setDescription(income.getDescription());
-
         return convertedIncome;
     }
 
@@ -103,7 +96,7 @@ public class IncomeServiceImpl implements IncomeService {
 
         // Convert each income's amount to the base currency and sum them up
         return incomes.stream()
-                .mapToDouble(income -> currencyService.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
+                .mapToDouble(income -> currencyConverter.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
                 .sum();
     }
 }

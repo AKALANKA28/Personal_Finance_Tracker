@@ -2,16 +2,20 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.Goal;
 
+import java.time.LocalDate;
 import java.util.List;
 
-public interface GoalService {
+public interface GoalsAndSavingsService {
     Goal setGoal(Goal goal);
     Goal updateGoal(Goal goal);
     boolean deleteGoal(String goalId);
     void trackGoalProgress(String goalId);
+
+    double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate);
+
     void allocateSavings(String userId, double amount);
 
-    void allocateSavingsFromIncome(String userId, double savingsPercentage);
+//    void allocateSavingsFromIncome(String userId, double savingsPercentage);
 
     List<Goal> getGoalsByUser(String userId);
 

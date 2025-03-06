@@ -1,10 +1,7 @@
 package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.*;
-import com.example.finance_tracker.repository.BudgetRepository;
-import com.example.finance_tracker.repository.GoalRepository;
-import com.example.finance_tracker.repository.IncomeRepository;
-import com.example.finance_tracker.repository.TransactionRepository;
+import com.example.finance_tracker.repository.*;
 import com.example.finance_tracker.util.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,24 +13,28 @@ import java.util.Date;
 import java.util.List;
 
 @Service("goalService")
-public class GoalServiceImpl implements GoalService {
+public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
 
     private final GoalRepository goalRepository;
     private final TransactionService transactionService;
     private final NotificationService notificationService;
     private final BudgetRepository budgetRepository;
-    private final TransactionRepository transactionRepository;
+//    private final TransactionRepository transactionRepository;
     private final IncomeRepository incomeRepository;
+    private final ExpenseRepository expenseRepository;
+    private final CurrencyConverter currencyConverter;
 
     @Autowired
-    public GoalServiceImpl(GoalRepository goalRepository, TransactionService transactionService,
-                           NotificationService notificationService, BudgetRepository budgetRepository, TransactionRepository transactionRepository, IncomeRepository incomeRepository) {
+    public GoalsAndSavingsServiceImpl(GoalRepository goalRepository, TransactionService transactionService,
+                                      NotificationService notificationService, BudgetRepository budgetRepository, IncomeRepository incomeRepository, ExpenseRepository expenseRepository, CurrencyConverter currencyConverter) {
         this.goalRepository = goalRepository;
         this.transactionService = transactionService;
         this.notificationService = notificationService;
         this.budgetRepository = budgetRepository;
-        this.transactionRepository = transactionRepository;
+//        this.transactionRepository = transactionRepository;
         this.incomeRepository = incomeRepository;
+        this.expenseRepository = expenseRepository;
+        this.currencyConverter = currencyConverter;
     }
 
     @Override
@@ -139,6 +140,31 @@ public class GoalServiceImpl implements GoalService {
     }
 
     @Override
+    public double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
+        // Fetch total income and convert to base currency
+        double totalIncome = incomeRepository.findByUserIdAndDateBetween(userId, startDate, endDate)
+                .stream()
+                .mapToDouble(income -> currencyConverter.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
+                .sum();
+
+        // Fetch total expenses and convert to base currency
+        double totalExpenses = expenseRepository.findByUserIdAndDateBetween(userId, startDate, endDate)
+                .stream()
+                .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                .sum();
+
+        // Calculate net savings
+        double netSavings = totalIncome - totalExpenses;
+
+        // Allocate net savings to goals
+        if (netSavings > 0) {
+            allocateSavings(userId, netSavings);
+        }
+
+        return netSavings;
+    }
+
+    @Override
     public void allocateSavings(String userId, double amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("Amount must be greater than 0");
@@ -162,53 +188,53 @@ public class GoalServiceImpl implements GoalService {
             trackGoalProgress(goal.getId());
         }
     }
-    @Override
-    public void allocateSavingsFromIncome(String userId, double savingsPercentage) {
-        if (savingsPercentage <= 0 || savingsPercentage > 100) {
-            throw new IllegalArgumentException("Savings percentage must be between 0 and 100");
-        }
+//    @Override
+//    public void allocateSavingsFromIncome(String userId, double savingsPercentage) {
+//        if (savingsPercentage <= 0 || savingsPercentage > 100) {
+//            throw new IllegalArgumentException("Savings percentage must be between 0 and 100");
+//        }
+//
+//        // Fetch the user's total income
+//        double totalIncome = incomeRepository.findByUserId(userId).stream()
+//                .mapToDouble(Income::getAmount)
+//                .sum();
+//
+//        // Calculate the savings amount
+//        double savingsAmount = (totalIncome * savingsPercentage) / 100;
+//
+//        // Fetch the user's active goals
+//        List<Goal> activeGoals = goalRepository.findByUserIdAndDeadlineAfter(userId, new Date());
+//
+//        // Allocate savings proportionally to each goal based on their target amounts
+//        double totalTargetAmount = activeGoals.stream()
+//                .mapToDouble(Goal::getTargetAmount)
+//                .sum();
+//
+//        for (Goal goal : activeGoals) {
+//            double allocation = (goal.getTargetAmount() / totalTargetAmount) * savingsAmount;
+//
+//            // Create a savings transaction
+//            Transaction savingsTransaction = getTransaction(userId, goal, allocation);
+//
+//            transactionRepository.save(savingsTransaction);
+//
+//            // Update goal progress
+//            trackGoalProgress(goal.getId());
+//        }
+//    }
 
-        // Fetch the user's total income
-        double totalIncome = incomeRepository.findByUserId(userId).stream()
-                .mapToDouble(Income::getAmount)
-                .sum();
-
-        // Calculate the savings amount
-        double savingsAmount = (totalIncome * savingsPercentage) / 100;
-
-        // Fetch the user's active goals
-        List<Goal> activeGoals = goalRepository.findByUserIdAndDeadlineAfter(userId, new Date());
-
-        // Allocate savings proportionally to each goal based on their target amounts
-        double totalTargetAmount = activeGoals.stream()
-                .mapToDouble(Goal::getTargetAmount)
-                .sum();
-
-        for (Goal goal : activeGoals) {
-            double allocation = (goal.getTargetAmount() / totalTargetAmount) * savingsAmount;
-
-            // Create a savings transaction
-            Transaction savingsTransaction = getTransaction(userId, goal, allocation);
-
-            transactionRepository.save(savingsTransaction);
-
-            // Update goal progress
-            trackGoalProgress(goal.getId());
-        }
-    }
-
-    private static Transaction getTransaction(String userId, Goal goal, double allocation) {
-        Transaction savingsTransaction = new Transaction();
-        savingsTransaction.setUserId(userId);
-        savingsTransaction.setType("Expense");
-        savingsTransaction.setAmount(allocation);
-        savingsTransaction.setCurrencyCode("USD"); // Default currency
-        savingsTransaction.setCategory("Savings");
-        savingsTransaction.setDate(new Date());
-        savingsTransaction.setDescription("Savings allocation for goal: " + goal.getName());
-        savingsTransaction.setGoalId(goal.getId());
-        return savingsTransaction;
-    }
+//    private static Transaction getTransaction(String userId, Goal goal, double allocation) {
+//        Transaction savingsTransaction = new Transaction();
+//        savingsTransaction.setUserId(userId);
+//        savingsTransaction.setType("Expense");
+//        savingsTransaction.setAmount(allocation);
+//        savingsTransaction.setCurrencyCode("USD"); // Default currency
+//        savingsTransaction.setCategory("Savings");
+//        savingsTransaction.setDate(new Date());
+//        savingsTransaction.setDescription("Savings allocation for goal: " + goal.getName());
+//        savingsTransaction.setGoalId(goal.getId());
+//        return savingsTransaction;
+//    }
 
     @Override
     public List<Goal> getGoalsByUser(String userId) {
