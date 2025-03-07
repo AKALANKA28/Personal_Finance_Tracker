@@ -4,8 +4,10 @@ import com.example.finance_tracker.model.*;
 import com.example.finance_tracker.repository.BudgetRepository;
 import com.example.finance_tracker.repository.ExpenseRepository;
 import com.example.finance_tracker.repository.IncomeRepository;
+import com.example.finance_tracker.util.CurrencyUtil;
 import com.example.finance_tracker.util.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -17,21 +19,20 @@ public class BudgetServiceImpl implements BudgetService {
     private final BudgetRepository budgetRepository;
     private final NotificationService notificationService;
     private final ExpenseRepository expenseRepository;
-    private final IncomeRepository incomeRepository;
-    private final CurrencyConverter currencyConverter; // Updated dependency
+    private final CurrencyConverter currencyConverter;
     private final GoalsAndSavingsService goalsAndSavingsService;
-
+    private final CurrencyUtil currencyUtil;
     @Autowired
     public BudgetServiceImpl(BudgetRepository budgetRepository, NotificationService notificationService,
-                             ExpenseRepository expenseRepository, IncomeRepository incomeRepository,
-                             CurrencyConverter currencyConverter, GoalsAndSavingsService goalsAndSavingsService) {
+                             ExpenseRepository expenseRepository, CurrencyConverter currencyConverter, GoalsAndSavingsService goalsAndSavingsService, CurrencyUtil currencyUtil) {
         this.budgetRepository = budgetRepository;
         this.notificationService = notificationService;
         this.expenseRepository = expenseRepository;
-        this.incomeRepository = incomeRepository;
-        this.currencyConverter = currencyConverter; // Updated dependency
+        this.currencyConverter = currencyConverter;
         this.goalsAndSavingsService = goalsAndSavingsService;
+        this.currencyUtil = currencyUtil;
     }
+
 
     @Override
     public Budget setBudget(Budget budget) {
@@ -61,6 +62,9 @@ public class BudgetServiceImpl implements BudgetService {
         int currentMonth = now.getMonthValue();
         int currentYear = now.getYear();
 
+        // Fetch the user's base currency
+        String baseCurrency = currencyUtil.getBaseCurrencyForUser(userId);
+
         LocalDate startDate = LocalDate.of(currentYear, currentMonth, 1);
         LocalDate endDate = LocalDate.of(currentYear, currentMonth, now.lengthOfMonth());
 
@@ -74,7 +78,8 @@ public class BudgetServiceImpl implements BudgetService {
                     .mapToDouble(expense -> currencyConverter.convertCurrency(
                             expense.getCurrencyCode(),
                             budget.getCurrencyCode(),
-                            expense.getAmount()
+                            expense.getAmount(),
+                            baseCurrency
                     ))
                     .sum();
 
@@ -103,22 +108,15 @@ public class BudgetServiceImpl implements BudgetService {
         LocalDate now = LocalDate.now();
         LocalDate threeMonthsAgo = now.minusMonths(3);
 
+        // Fetch the user's base currency
+        String baseCurrency = currencyUtil.getBaseCurrencyForUser(userId);
+
         // Fetch budgets, expenses, and income
         List<Budget> budgets = budgetRepository.findByUserId(userId);
         List<Expense> expenses = expenseRepository.findByUserIdAndDateBetween(userId, threeMonthsAgo, now);
-        List<Income> incomes = incomeRepository.findByUserIdAndDateBetween(userId, threeMonthsAgo, now);
-
-        // Convert all amounts to the base currency (e.g., USD)
-        double totalIncome = incomes.stream()
-                .mapToDouble(income -> currencyConverter.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
-                .sum();
-
-        double totalExpenses = expenses.stream()
-                .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
-                .sum();
 
         // Calculate net savings
-        double netSavings = totalIncome - totalExpenses;
+        double netSavings = goalsAndSavingsService.calculateNetSavings(userId, now, threeMonthsAgo);
 
         // Generate recommendations
         List<String> recommendations = new ArrayList<>();
@@ -126,23 +124,28 @@ public class BudgetServiceImpl implements BudgetService {
             // Calculate total spending for the budget category in the base currency
             double totalSpending = expenses.stream()
                     .filter(expense -> expense.getCategory().equals(budget.getCategory()))
-                    .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                    .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount(), baseCurrency))
                     .sum();
 
             // Convert the budget limit to the base currency
-            double budgetLimit = currencyConverter.convertToBaseCurrency(budget.getCurrencyCode(), budget.getLimit());
+            double budgetLimit = currencyConverter.convertToBaseCurrency(budget.getCurrencyCode(), budget.getLimit(), baseCurrency);
 
-            if (totalSpending > budgetLimit * 1.1) { // Spending exceeds budget by 10%
-                recommendations.add(String.format("Consider increasing your budget for %s. Average spending: %.2f USD, Current budget: %.2f USD",
-                        budget.getCategory(), totalSpending, budgetLimit));
-            } else if (totalSpending < budgetLimit * 0.9) { // Spending is below budget by 10%
-                recommendations.add(String.format("Consider decreasing your budget for %s. Average spending: %.2f USD, Current budget: %.2f USD",
-                        budget.getCategory(), totalSpending, budgetLimit));
+            if (totalSpending > budgetLimit * 1.1) {
+                recommendations.add(String.format(
+                        "Consider increasing your budget for %s. Average spending: %.2f %s, Current budget: %.2f %s",
+                        budget.getCategory(), totalSpending, baseCurrency, budgetLimit, baseCurrency
+                ));
+            } else if (totalSpending < budgetLimit * 0.9) {
+                recommendations.add(String.format(
+                        "Consider decreasing your budget for %s. Average spending: %.2f %s, Current budget: %.2f %s",
+                        budget.getCategory(), totalSpending, baseCurrency, budgetLimit, baseCurrency
+                ));
             }
         }
 
         // Add net savings to recommendations
-        recommendations.add(String.format("Your net savings over the last 3 months: %.2f USD", netSavings));
+        recommendations.add(String.format( "Your net savings over the last 3 months: %.2f %s",
+                netSavings, baseCurrency));
 
         // Notify the user with recommendations
         if (!recommendations.isEmpty()) {
@@ -153,31 +156,7 @@ public class BudgetServiceImpl implements BudgetService {
         }
     }
 
-//    @Override
-//    public double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
-//        // Fetch total income and convert to base currency
-//        double totalIncome = incomeRepository.findByUserIdAndDateBetween(userId, startDate, endDate)
-//                .stream()
-//                .mapToDouble(income -> currencyConverter.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
-//                .sum();
-//
-//        // Fetch total expenses and convert to base currency
-//        double totalExpenses = expenseRepository.findByUserIdAndDateBetween(userId, startDate, endDate)
-//                .stream()
-//                .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
-//                .sum();
-//
-//        // Calculate net savings
-//        double netSavings = totalIncome - totalExpenses;
-//
-//        // Allocate net savings to goals
-//        if (netSavings > 0) {
-//            goalsAndSavingsService.allocateSavings(userId, netSavings);
-//        }
-//
-//        return netSavings;
-//    }
-//
+
     @Override
     public void allocateBudgetToGoal(String userId, String goalId, double amount) {
         Goal goal = goalsAndSavingsService.getGoalById(goalId);

@@ -2,6 +2,7 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.Income;
 import com.example.finance_tracker.repository.IncomeRepository;
+import com.example.finance_tracker.util.CurrencyUtil;
 import com.example.finance_tracker.util.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,11 +15,13 @@ public class IncomeServiceImpl implements IncomeService {
 
     private final IncomeRepository incomeRepository;
     private final CurrencyConverter currencyConverter; // Updated dependency
+    private final CurrencyUtil currencyUtil;
 
     @Autowired
-    public IncomeServiceImpl(IncomeRepository incomeRepository, CurrencyConverter currencyConverter) {
+    public IncomeServiceImpl(IncomeRepository incomeRepository, CurrencyConverter currencyConverter, CurrencyUtil currencyUtil) {
         this.incomeRepository = incomeRepository;
         this.currencyConverter = currencyConverter; // Updated dependency
+        this.currencyUtil = currencyUtil;
     }
 
     @Override
@@ -64,7 +67,7 @@ public class IncomeServiceImpl implements IncomeService {
         double originalAmount = income.getAmount();
 
         // Convert the amount to the preferred currency using CurrencyConverter
-        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount);
+        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount,  "LKR");
 
         // Create a new income object with the converted amount and preferred currency
         Income convertedIncome = new Income();
@@ -94,9 +97,12 @@ public class IncomeServiceImpl implements IncomeService {
     public double calculateTotalIncomeInBaseCurrency(String userId) {
         List<Income> incomes = incomeRepository.findByUserId(userId);
 
+        // Fetch the user's base currency
+        String baseCurrency = currencyUtil.getBaseCurrencyForUser(userId);
+
         // Convert each income's amount to the base currency and sum them up
         return incomes.stream()
-                .mapToDouble(income -> currencyConverter.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
+                .mapToDouble(income -> currencyConverter.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount(),  baseCurrency))
                 .sum();
     }
 }

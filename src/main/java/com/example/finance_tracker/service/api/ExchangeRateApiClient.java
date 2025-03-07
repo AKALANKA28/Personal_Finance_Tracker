@@ -1,13 +1,16 @@
 package com.example.finance_tracker.service.api;
 
 import com.example.finance_tracker.config.ExchangeRateApiConfig;
-import lombok.Getter;
-import lombok.Setter;
+import com.example.finance_tracker.model.ExchangeRateResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
+@Slf4j
 @Service
 public class ExchangeRateApiClient {
 
@@ -19,24 +22,36 @@ public class ExchangeRateApiClient {
         this.restTemplate = restTemplate;
     }
 
-    /**
-     * Fetches the latest exchange rates from the external API.
-     */
-    public Map<String, Double> getLatestExchangeRates() {
-        String url = apiConfig.getApiUrl() + "?access_key=" + apiConfig.getApiKey();
-        ExchangeRateResponse response = restTemplate.getForObject(url, ExchangeRateResponse.class);
+    public Map<String, Double> getLatestExchangeRates(String baseCurrency) {
+        String url = apiConfig.getApiUrl() + "/v6/" + apiConfig.getApiKey() + "/latest/" + baseCurrency;
+        log.info("Fetching exchange rates from URL: {}", url);
 
-        if (response != null && response.isSuccess()) {
-            return response.getRates();
-        } else {
-            throw new RuntimeException("Failed to fetch exchange rates from the API");
+        try {
+            ResponseEntity<ExchangeRateResponse> responseEntity = restTemplate.getForEntity(url, ExchangeRateResponse.class);
+
+            log.debug("API Response: {}", responseEntity);
+
+            if (responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.getBody() != null) {
+                ExchangeRateResponse response = responseEntity.getBody();
+
+                log.info("Exchange rate API result: {}", response.getResult());
+
+                if ("success".equals(response.getResult())) {
+                    log.info("Exchange rates retrieved successfully");
+
+                    return response.getConversionRates();
+
+                } else {
+                    log.error("API returned an error response: {}", response);
+                    return null;
+                }
+            } else {
+                log.error("Failed to fetch exchange rates. HTTP Status: {}", responseEntity.getStatusCode());
+                return null;
+            }
+        } catch (Exception e) {
+            log.error("Error fetching exchange rates: {}", e.getMessage(), e);
+            return null;
         }
-    }
-
-    @Setter
-    @Getter
-    private static class ExchangeRateResponse {
-        private boolean success;
-        private Map<String, Double> rates;
     }
 }

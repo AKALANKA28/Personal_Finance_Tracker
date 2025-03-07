@@ -8,8 +8,12 @@ import java.util.List;
 public interface GoalsAndSavingsService {
     Goal setGoal(Goal goal);
     Goal updateGoal(Goal goal);
+
     boolean deleteGoal(String goalId);
-    void trackGoalProgress(String goalId);
+
+    Goal trackGoalProgress(String goalId);
+
+    Goal addManualContribution(String goalId, double amount);
 
     double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate);
 
@@ -20,6 +24,8 @@ public interface GoalsAndSavingsService {
     List<Goal> getGoalsByUser(String userId);
 
     Goal getGoalById(String goalId);
+
+    boolean isOwner(String goalId, String userId);
 
     double calculateTotalSavings(String userId);
 

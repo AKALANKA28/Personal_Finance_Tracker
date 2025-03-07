@@ -6,6 +6,7 @@ import com.example.finance_tracker.model.Income;
 import com.example.finance_tracker.repository.BudgetRepository;
 import com.example.finance_tracker.repository.ExpenseRepository;
 import com.example.finance_tracker.repository.IncomeRepository;
+import com.example.finance_tracker.util.CurrencyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,24 +20,23 @@ public class ReportServiceImpl implements ReportService {
 
     private final BudgetRepository budgetRepository;
     private final ExpenseRepository expenseRepository;
-    private final IncomeRepository incomeRepository;
     private final CurrencyConverter currencyConverter;
-    private final ExpenseService expenseService; // Inject ExpenseService
-    private final IncomeService incomeService;   // Inject IncomeService
-    private final GoalsAndSavingsService goalsAndSavingsService; // Inject GoalsAndSavingsService
+    private final ExpenseService expenseService;
+    private final IncomeService incomeService;
+    private final GoalsAndSavingsService goalsAndSavingsService;
+    private final CurrencyUtil currencyUtil;
 
     @Autowired
     public ReportServiceImpl(BudgetRepository budgetRepository, ExpenseRepository expenseRepository,
-                             IncomeRepository incomeRepository, CurrencyConverter currencyConverter,
-                             ExpenseService expenseService, IncomeService incomeService,
-                             GoalsAndSavingsService goalsAndSavingsService) {
+                            CurrencyConverter currencyConverter, ExpenseService expenseService, IncomeService incomeService,
+                             GoalsAndSavingsService goalsAndSavingsService, CurrencyUtil currencyUtil) {
         this.budgetRepository = budgetRepository;
         this.expenseRepository = expenseRepository;
-        this.incomeRepository = incomeRepository;
         this.currencyConverter = currencyConverter;
         this.expenseService = expenseService;
         this.incomeService = incomeService;
         this.goalsAndSavingsService = goalsAndSavingsService;
+        this.currencyUtil = currencyUtil;
     }
 
     @Override
@@ -92,9 +92,9 @@ public class ReportServiceImpl implements ReportService {
 
     private Map<String, Double> calculateIncomeExpenseAndNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
         // Reuse existing methods to calculate totals
-        double totalIncome = incomeService.calculateTotalIncomeInBaseCurrency(userId); // Reuse existing method
-        double totalExpenses = expenseService.calculateTotalExpensesInBaseCurrency(userId); // Reuse existing method
-        double netSavings = goalsAndSavingsService.calculateNetSavings(userId, startDate, endDate); // Reuse existing method
+        double totalIncome = incomeService.calculateTotalIncomeInBaseCurrency(userId);
+        double totalExpenses = expenseService.calculateTotalExpensesInBaseCurrency(userId);
+        double netSavings = goalsAndSavingsService.calculateNetSavings(userId, startDate, endDate);
 
         // Return the results in a map
         Map<String, Double> result = new HashMap<>();
@@ -107,11 +107,14 @@ public class ReportServiceImpl implements ReportService {
     private Map<String, Map<String, Object>> calculateSpendingTrends(String userId, List<Budget> budgets, List<Expense> expenses, LocalDate startDate, LocalDate endDate) {
         Map<String, Map<String, Object>> spendingTrends = new HashMap<>();
 
+        // Fetch the user's base currency
+        String baseCurrency = currencyUtil.getBaseCurrencyForUser(userId);
+
         for (Budget budget : budgets) {
             String category = budget.getCategory();
             double totalSpending = expenses.stream()
                     .filter(expense -> expense.getCategory().equals(category))
-                    .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                    .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount(),  baseCurrency))
                     .sum();
 
             long numberOfMonths = startDate.until(endDate).toTotalMonths() + 1; // Include the start month
