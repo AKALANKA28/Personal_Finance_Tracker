@@ -17,8 +17,9 @@ public class ExchangeRateController {
     }
 
     @GetMapping("/latest")
-    public ResponseEntity<Map<String, Double>> getLatestExchangeRates() {
-        Map<String, Double> rates = exchangeRateService.getLatestExchangeRates();
+    public ResponseEntity<Map<String, Double>> getLatestExchangeRates(
+            @RequestParam(defaultValue = "LKR") String baseCurrency) {
+        Map<String, Double> rates = exchangeRateService.getLatestExchangeRates(baseCurrency);
         return ResponseEntity.ok(rates);
     }
 
@@ -26,16 +27,18 @@ public class ExchangeRateController {
     public ResponseEntity<Double> convertCurrency(
             @RequestParam String fromCurrency,
             @RequestParam String toCurrency,
-            @RequestParam double amount) {
-        double convertedAmount = exchangeRateService.convertCurrency(fromCurrency, toCurrency, amount);
+            @RequestParam double amount,
+            @RequestParam(defaultValue = "USD") String baseCurrency) {
+        double convertedAmount = exchangeRateService.convertCurrency(fromCurrency, toCurrency, amount, baseCurrency);
         return ResponseEntity.ok(convertedAmount);
     }
 
     @GetMapping("/convert-to-base")
     public ResponseEntity<Double> convertToBaseCurrency(
             @RequestParam String currencyCode,
-            @RequestParam double amount) {
-        double convertedAmount = exchangeRateService.convertToBaseCurrency(currencyCode, amount);
+            @RequestParam double amount,
+            @RequestParam(defaultValue = "USD") String baseCurrency) {
+        double convertedAmount = exchangeRateService.convertToBaseCurrency(currencyCode, amount, baseCurrency);
         return ResponseEntity.ok(convertedAmount);
     }
 }

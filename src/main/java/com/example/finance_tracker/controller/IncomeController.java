@@ -21,9 +21,9 @@ public class IncomeController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')") // Only authenticated users can add income
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')") 
     public ResponseEntity<Income> addIncome(@RequestBody Income income, @RequestAttribute("authenticatedUserId") String authenticatedUserId) {
-        income.setUserId(authenticatedUserId); // Set the authenticated user's ID
+        income.setUserId(authenticatedUserId);
         Income newIncome = incomeService.addIncome(income);
         return ResponseEntity.ok(newIncome);
     }
@@ -31,7 +31,7 @@ public class IncomeController {
     @PutMapping("/{id}")
     @PreAuthorize("@incomeService.isOwner(#id, authentication.principal.id) or hasRole('ROLE_ADMIN')") // Ensure the user owns the income or is an admin
     public ResponseEntity<Income> updateIncome(@PathVariable String id, @RequestBody Income income) {
-        income.setId(id); // Ensure the ID matches the path variable
+        income.setId(id);
         Income updatedIncome = incomeService.updateIncome(income);
         return ResponseEntity.ok(updatedIncome);
     }

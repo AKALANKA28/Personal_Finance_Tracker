@@ -21,6 +21,8 @@ public interface GoalsAndSavingsService {
 
     Goal getGoalById(String goalId);
 
+    boolean isOwner(String goalId, String userId);
+
     double calculateTotalSavings(String userId);
 
     double calculateRemainingAmountForGoal(String goalId);

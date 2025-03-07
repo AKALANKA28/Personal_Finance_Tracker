@@ -21,9 +21,9 @@ public class ReportServiceImpl implements ReportService {
     private final ExpenseRepository expenseRepository;
     private final IncomeRepository incomeRepository;
     private final CurrencyConverter currencyConverter;
-    private final ExpenseService expenseService; // Inject ExpenseService
-    private final IncomeService incomeService;   // Inject IncomeService
-    private final GoalsAndSavingsService goalsAndSavingsService; // Inject GoalsAndSavingsService
+    private final ExpenseService expenseService;
+    private final IncomeService incomeService;
+    private final GoalsAndSavingsService goalsAndSavingsService;
 
     @Autowired
     public ReportServiceImpl(BudgetRepository budgetRepository, ExpenseRepository expenseRepository,
@@ -92,9 +92,9 @@ public class ReportServiceImpl implements ReportService {
 
     private Map<String, Double> calculateIncomeExpenseAndNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
         // Reuse existing methods to calculate totals
-        double totalIncome = incomeService.calculateTotalIncomeInBaseCurrency(userId); // Reuse existing method
-        double totalExpenses = expenseService.calculateTotalExpensesInBaseCurrency(userId); // Reuse existing method
-        double netSavings = goalsAndSavingsService.calculateNetSavings(userId, startDate, endDate); // Reuse existing method
+        double totalIncome = incomeService.calculateTotalIncomeInBaseCurrency(userId);
+        double totalExpenses = expenseService.calculateTotalExpensesInBaseCurrency(userId);
+        double netSavings = goalsAndSavingsService.calculateNetSavings(userId, startDate, endDate);
 
         // Return the results in a map
         Map<String, Double> result = new HashMap<>();
@@ -111,7 +111,7 @@ public class ReportServiceImpl implements ReportService {
             String category = budget.getCategory();
             double totalSpending = expenses.stream()
                     .filter(expense -> expense.getCategory().equals(category))
-                    .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                    .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount(),  "LKR"))
                     .sum();
 
             long numberOfMonths = startDate.until(endDate).toTotalMonths() + 1; // Include the start month

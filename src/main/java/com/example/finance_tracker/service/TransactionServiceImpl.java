@@ -122,7 +122,7 @@ public class TransactionServiceImpl implements TransactionService {
         double originalAmount = transaction.getAmount();
 
         // Convert the amount to the preferred currency using CurrencyConverter
-        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount);
+        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount,  "LKR");
 
         // Create a new transaction object with the converted amount and preferred currency
         return getTransaction(transaction, preferredCurrency, convertedAmount);

@@ -64,7 +64,7 @@ public class IncomeServiceImpl implements IncomeService {
         double originalAmount = income.getAmount();
 
         // Convert the amount to the preferred currency using CurrencyConverter
-        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount);
+        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount,  "LKR");
 
         // Create a new income object with the converted amount and preferred currency
         Income convertedIncome = new Income();
@@ -96,7 +96,7 @@ public class IncomeServiceImpl implements IncomeService {
 
         // Convert each income's amount to the base currency and sum them up
         return incomes.stream()
-                .mapToDouble(income -> currencyConverter.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
+                .mapToDouble(income -> currencyConverter.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount(),  "USD"))
                 .sum();
     }
 }

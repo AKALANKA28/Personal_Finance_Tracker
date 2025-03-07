@@ -15,8 +15,8 @@ public class CurrencyConverter {
     /**
      * Converts an amount from one currency to another using the latest exchange rates.
      */
-    public double convertCurrency(String fromCurrency, String toCurrency, double amount) {
-        Map<String, Double> rates = exchangeRateApiClient.getLatestExchangeRates();
+    public double convertCurrency(String fromCurrency, String toCurrency, double amount, String baseCurrency) {
+        Map<String, Double> rates = exchangeRateApiClient.getLatestExchangeRates(baseCurrency);
 
         Double fromRate = rates.get(fromCurrency);
         Double toRate = rates.get(toCurrency);
@@ -31,8 +31,8 @@ public class CurrencyConverter {
     /**
      * Converts an amount to the base currency (e.g., USD).
      */
-    public double convertToBaseCurrency(String currencyCode, double amount) {
-        Map<String, Double> rates = exchangeRateApiClient.getLatestExchangeRates();
+    public double convertToBaseCurrency(String currencyCode, double amount, String baseCurrency) {
+        Map<String, Double> rates = exchangeRateApiClient.getLatestExchangeRates(baseCurrency);
 
         Double rate = rates.get(currencyCode);
         if (rate == null) {

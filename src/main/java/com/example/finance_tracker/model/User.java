@@ -24,12 +24,12 @@ public class User implements UserDetails {
     private String id;
     private String username;
     private String password;
-    private List<String> roles = Collections.emptyList(); // Initialize with empty list
-
+    private List<String> roles = Collections.emptyList();
+    private String baseCurrency;
 
 
     public void setRoles(List<String> roles) {
-        this.roles = roles != null ? roles : Collections.emptyList(); // Ensure roles is never null
+        this.roles = roles != null ? roles : Collections.emptyList();
     }
 
     // Implement UserDetails methods
@@ -53,21 +53,21 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return true; // Customize as needed
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true; // Customize as needed
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true; // Customize as needed
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return true; // Customize as needed
+        return true;
     }
 }

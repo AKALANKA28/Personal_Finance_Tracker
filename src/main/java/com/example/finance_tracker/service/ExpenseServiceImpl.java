@@ -65,7 +65,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         double originalAmount = expense.getAmount();
 
         // Convert the amount to the preferred currency
-        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount);
+        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount,  "LKR");
 
 
         // Create a new expense object with the converted amount and preferred currency
@@ -99,7 +99,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         // Convert each expense's amount to the base currency and sum them up
         return expenses.stream()
-                .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
+                .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount(),  "USD"))
                 .sum();
     }
 

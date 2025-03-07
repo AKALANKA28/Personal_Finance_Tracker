@@ -3,6 +3,7 @@ package com.example.finance_tracker.controller;
 import com.example.finance_tracker.model.Goal;
 import com.example.finance_tracker.service.GoalsAndSavingsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -12,17 +13,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/goals")
-public class GoalController {
+public class GoalsAndSavingsController {
 
     private final GoalsAndSavingsService goalsAndSavingsService;
 
     @Autowired
-    public GoalController(GoalsAndSavingsService goalsAndSavingsService) {
+    public GoalsAndSavingsController(GoalsAndSavingsService goalsAndSavingsService) {
         this.goalsAndSavingsService = goalsAndSavingsService;
     }
 
-    // Create a new goal
-    @PostMapping("/create")
+    @PostMapping()
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<Goal> setGoal(@RequestBody Goal goal, @RequestAttribute("authenticatedUserId") String authenticatedUserId) {
         goal.setUserId(authenticatedUserId);
@@ -32,12 +32,15 @@ public class GoalController {
 
     // Update an existing goal
     @PutMapping("/{id}")
-    @PreAuthorize("@goalService.isOwner(#id, authentication.principal.id)")
-    public ResponseEntity<Goal> updateGoal(@PathVariable String id, @RequestBody Goal goal) {
+    @PreAuthorize("@goalService.isOwner(#id, authentication.principal.id)") // Make sure the user is the owner of the goal
+    public ResponseEntity<Goal> updateGoal(@PathVariable String id, @RequestBody Goal goal, @RequestAttribute("authenticatedUserId") String authenticatedUserId) {
         goal.setId(id); // Ensure the ID matches the path variable
+        goal.setUserId(authenticatedUserId); // Automatically set the userId when updating
+
         Goal updatedGoal = goalsAndSavingsService.updateGoal(goal);
         return ResponseEntity.ok(updatedGoal);
     }
+
 
     // Delete a goal
     @DeleteMapping("/{id}")
@@ -45,35 +48,6 @@ public class GoalController {
     public ResponseEntity<Void> deleteGoal(@PathVariable String id) {
         goalsAndSavingsService.deleteGoal(id);
         return ResponseEntity.noContent().build();
-    }
-
-    // Track progress for a specific goal
-    @PostMapping("/{id}/track-progress")
-    @PreAuthorize("@goalService.isOwner(#id, authentication.principal.id)")
-    public ResponseEntity<Void> trackGoalProgress(@PathVariable String id) {
-        goalsAndSavingsService.trackGoalProgress(id);
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/net-savings/{userId}/")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Double> calculateNetSavings(
-            @PathVariable String userId,
-            @RequestParam String startDate,
-            @RequestParam String endDate) {
-        LocalDate start = LocalDate.parse(startDate);
-        LocalDate end = LocalDate.parse(endDate);
-
-        double netSavings = goalsAndSavingsService.calculateNetSavings(userId, start, end);
-        return ResponseEntity.ok(netSavings);
-    }
-
-    // Allocate savings to active goals
-    @PostMapping("/user/{userId}/allocate-savings")
-    @PreAuthorize("#userId == authentication.principal.id")
-    public ResponseEntity<Void> allocateSavings(@PathVariable String userId, @RequestParam double amount) {
-        goalsAndSavingsService.allocateSavings(userId, amount);
-        return ResponseEntity.ok().build();
     }
 
     // Get all goals for a user
@@ -92,13 +66,16 @@ public class GoalController {
         return ResponseEntity.ok(goal);
     }
 
-    // Calculate total savings for a user
-    @GetMapping("/user/{userId}/total-savings")
-    @PreAuthorize("#userId == authentication.principal.id")
-    public ResponseEntity<Double> calculateTotalSavings(@PathVariable String userId) {
-        double totalSavings = goalsAndSavingsService.calculateTotalSavings(userId);
-        return ResponseEntity.ok(totalSavings);
+
+    /// ////////////////
+    // Track progress for a specific goal
+    @PostMapping("/{id}/track-progress")
+    @PreAuthorize("@goalService.isOwner(#id, authentication.principal.id)")
+    public ResponseEntity<Void> trackGoalProgress(@PathVariable String id) {
+        goalsAndSavingsService.trackGoalProgress(id);
+        return ResponseEntity.ok().build();
     }
+
 
     // Calculate the remaining amount needed for a specific goal
     @GetMapping("/{id}/remaining-amount")
@@ -124,14 +101,20 @@ public class GoalController {
         return ResponseEntity.ok(completedGoals);
     }
 
+    /// ////////////////////////////
     // Get all overdue goals for a user
     @GetMapping("/user/{userId}/overdue")
     @PreAuthorize("#userId == authentication.principal.id")
-    public ResponseEntity<List<Goal>> getOverdueGoals(@PathVariable String userId) {
+    public ResponseEntity<?> getOverdueGoals(@PathVariable String userId) {
         List<Goal> overdueGoals = goalsAndSavingsService.getOverdueGoals(userId);
-        return ResponseEntity.ok(overdueGoals);
 
+        if (overdueGoals.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.OK).body("No overdue goals found.");
+        }
+
+        return ResponseEntity.ok(overdueGoals);
     }
+
 
     @PostMapping("/check-near-overdue")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -139,6 +122,7 @@ public class GoalController {
         goalsAndSavingsService.checkAndNotifyNearOverdueGoals();
         return ResponseEntity.ok().build();
     }
+
 
     @PostMapping("/{goalId}/link-budget")
     @PreAuthorize("@goalService.isOwner(#goalId, authentication.principal.id)") // Ensure the user owns the goal
@@ -148,6 +132,37 @@ public class GoalController {
         goalsAndSavingsService.linkBudgetToGoal(goalId, budgetId);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/net-savings/{userId}/")
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Double> calculateNetSavings(
+            @PathVariable String userId,
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
+
+        double netSavings = goalsAndSavingsService.calculateNetSavings(userId, start, end);
+        return ResponseEntity.ok(netSavings);
+    }
+
+    // Allocate savings to active goals
+    @PostMapping("/user/{userId}/allocate-savings")
+    @PreAuthorize("#userId == authentication.principal.id")
+    public ResponseEntity<Void> allocateSavings(@PathVariable String userId, @RequestParam double amount) {
+        goalsAndSavingsService.allocateSavings(userId, amount);
+        return ResponseEntity.ok().build();
+    }
+
+    // Calculate total savings for a user
+    @GetMapping("/user/{userId}/total-savings")
+    @PreAuthorize("#userId == authentication.principal.id")
+    public ResponseEntity<Double> calculateTotalSavings(@PathVariable String userId) {
+        double totalSavings = goalsAndSavingsService.calculateTotalSavings(userId);
+        return ResponseEntity.ok(totalSavings);
+    }
+
+
 
 
 }

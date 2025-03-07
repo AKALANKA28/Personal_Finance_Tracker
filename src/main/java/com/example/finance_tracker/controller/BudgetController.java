@@ -66,16 +66,4 @@ public class BudgetController {
         return ResponseEntity.ok().build();
     }
 
-//    @GetMapping("/net-savings/{userId}/")
-//    @PreAuthorize("#userId == authentication.principal.id or hasRole('ROLE_ADMIN')")
-//    public ResponseEntity<Double> calculateNetSavings(
-//            @PathVariable String userId,
-//            @RequestParam String startDate,
-//            @RequestParam String endDate) {
-//        LocalDate start = LocalDate.parse(startDate);
-//        LocalDate end = LocalDate.parse(endDate);
-//
-//        double netSavings = budgetService.calculateNetSavings(userId, start, end);
-//        return ResponseEntity.ok(netSavings);
-//    }
 }

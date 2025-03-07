@@ -19,22 +19,25 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
     private final TransactionService transactionService;
     private final NotificationService notificationService;
     private final BudgetRepository budgetRepository;
-//    private final TransactionRepository transactionRepository;
     private final IncomeRepository incomeRepository;
     private final ExpenseRepository expenseRepository;
     private final CurrencyConverter currencyConverter;
-
+    private final ExpenseService expenseService;
+    private final IncomeService incomeService;
     @Autowired
     public GoalsAndSavingsServiceImpl(GoalRepository goalRepository, TransactionService transactionService,
-                                      NotificationService notificationService, BudgetRepository budgetRepository, IncomeRepository incomeRepository, ExpenseRepository expenseRepository, CurrencyConverter currencyConverter) {
+                                      NotificationService notificationService, BudgetRepository budgetRepository,
+                                      IncomeRepository incomeRepository, ExpenseRepository expenseRepository,
+                                      CurrencyConverter currencyConverter, ExpenseService expenseService, IncomeService incomeService) {
         this.goalRepository = goalRepository;
         this.transactionService = transactionService;
         this.notificationService = notificationService;
         this.budgetRepository = budgetRepository;
-//        this.transactionRepository = transactionRepository;
         this.incomeRepository = incomeRepository;
         this.expenseRepository = expenseRepository;
         this.currencyConverter = currencyConverter;
+        this.expenseService = expenseService;
+        this.incomeService = incomeService;
     }
 
     @Override
@@ -81,6 +84,17 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
     }
 
     @Override
+    public List<Goal> getGoalsByUser(String userId) {
+        return goalRepository.findByUserId(userId);
+    }
+
+    @Override
+    public Goal getGoalById(String goalId) {
+        return goalRepository.findById(goalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
+    }
+
+    @Override
     public void trackGoalProgress(String goalId) {
         Goal goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
@@ -111,12 +125,7 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
 
         // Notify user if the goal is achieved
         if (progressPercentage >= 100) {
-            Notification notification = new Notification();
-            notification.setUserId(goal.getUserId());
-            notification.setTitle("Goal Achieved");
-            notification.setMessage("Congratulations! You have achieved your goal: " + goal.getName());
-            notificationService.sendNotification(notification);
-            notificationService.sendEmailNotification(notification);
+            notifyUserAboutGoalProgress(goal, "Goal Achieved", "Congratulations! You have achieved your goal: " + goal.getName());
         }
 
         // Notify user if the goal is nearing its deadline
@@ -129,39 +138,27 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
                     "Your goal '%s' is nearing its deadline. Only %d days remaining!",
                     goal.getName(), daysRemaining
             );
-
-            Notification notification = new Notification();
-            notification.setUserId(goal.getUserId());
-            notification.setTitle("Goal Nearing Deadline");
-            notification.setMessage(message);
-            notificationService.sendNotification(notification);
-            notificationService.sendEmailNotification(notification);
+            notifyUserAboutGoalProgress(goal, "Goal Nearing Deadline", message);
         }
     }
 
     @Override
     public double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
-        // Fetch total income and convert to base currency
-        double totalIncome = incomeRepository.findByUserIdAndDateBetween(userId, startDate, endDate)
-                .stream()
-                .mapToDouble(income -> currencyConverter.convertToBaseCurrency(income.getCurrencyCode(), income.getAmount()))
-                .sum();
+        // Fetch converted total income to base currency
+        double totalIncome = incomeService.calculateTotalIncomeInBaseCurrency(userId);
 
-        // Fetch total expenses and convert to base currency
-        double totalExpenses = expenseRepository.findByUserIdAndDateBetween(userId, startDate, endDate)
-                .stream()
-                .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount()))
-                .sum();
+        // Fetch converted total expenses to base currency
+        double totalExpenses = expenseService.calculateTotalExpensesInBaseCurrency(userId);
 
         // Calculate net savings
-        double netSavings = totalIncome - totalExpenses;
+        return  (totalIncome - totalExpenses);
 
         // Allocate net savings to goals
-        if (netSavings > 0) {
-            allocateSavings(userId, netSavings);
-        }
+//        if (netSavings > 0) {
+//            allocateSavings(userId, netSavings);
+//        }
 
-        return netSavings;
+//        return netSavings ;
     }
 
     @Override
@@ -188,65 +185,9 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
             trackGoalProgress(goal.getId());
         }
     }
-//    @Override
-//    public void allocateSavingsFromIncome(String userId, double savingsPercentage) {
-//        if (savingsPercentage <= 0 || savingsPercentage > 100) {
-//            throw new IllegalArgumentException("Savings percentage must be between 0 and 100");
-//        }
-//
-//        // Fetch the user's total income
-//        double totalIncome = incomeRepository.findByUserId(userId).stream()
-//                .mapToDouble(Income::getAmount)
-//                .sum();
-//
-//        // Calculate the savings amount
-//        double savingsAmount = (totalIncome * savingsPercentage) / 100;
-//
-//        // Fetch the user's active goals
-//        List<Goal> activeGoals = goalRepository.findByUserIdAndDeadlineAfter(userId, new Date());
-//
-//        // Allocate savings proportionally to each goal based on their target amounts
-//        double totalTargetAmount = activeGoals.stream()
-//                .mapToDouble(Goal::getTargetAmount)
-//                .sum();
-//
-//        for (Goal goal : activeGoals) {
-//            double allocation = (goal.getTargetAmount() / totalTargetAmount) * savingsAmount;
-//
-//            // Create a savings transaction
-//            Transaction savingsTransaction = getTransaction(userId, goal, allocation);
-//
-//            transactionRepository.save(savingsTransaction);
-//
-//            // Update goal progress
-//            trackGoalProgress(goal.getId());
-//        }
-//    }
 
-//    private static Transaction getTransaction(String userId, Goal goal, double allocation) {
-//        Transaction savingsTransaction = new Transaction();
-//        savingsTransaction.setUserId(userId);
-//        savingsTransaction.setType("Expense");
-//        savingsTransaction.setAmount(allocation);
-//        savingsTransaction.setCurrencyCode("USD"); // Default currency
-//        savingsTransaction.setCategory("Savings");
-//        savingsTransaction.setDate(new Date());
-//        savingsTransaction.setDescription("Savings allocation for goal: " + goal.getName());
-//        savingsTransaction.setGoalId(goal.getId());
-//        return savingsTransaction;
-//    }
 
     @Override
-    public List<Goal> getGoalsByUser(String userId) {
-        return goalRepository.findByUserId(userId);
-    }
-
-    @Override
-    public Goal getGoalById(String goalId) {
-        return goalRepository.findById(goalId)
-                .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
-    }
-
     public boolean isOwner(String goalId, String userId) {
         Goal goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Goal not found"));
@@ -295,13 +236,7 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
                         "Your goal '%s' is nearing its deadline. Only %d days remaining!",
                         goal.getName(), daysRemaining
                 );
-
-                Notification notification = new Notification();
-                notification.setUserId(goal.getUserId());
-                notification.setTitle("Goal Nearing Deadline");
-                notification.setMessage(message);
-                notificationService.sendNotification(notification);
-                notificationService.sendEmailNotification(notification);
+                notifyUserAboutGoalProgress(goal, "Goal Nearing Deadline", message);
             }
         }
     }
@@ -311,6 +246,7 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
     public void scheduledCheckForNearOverdueGoals() {
         checkAndNotifyNearOverdueGoals();
     }
+
     @Override
     public List<Goal> getOverdueGoals(String userId) {
         return goalRepository.findByUserIdAndDeadlineBeforeAndProgressPercentageLessThan(userId, new Date(), 100);
@@ -353,8 +289,6 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
         notificationService.sendNotification(notification);
     }
 
-
-
     private Notification createNotification(String userId, String title, String message) {
         Notification notification = new Notification();
         notification.setUserId(userId);
@@ -364,6 +298,19 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
         return notification;
     }
 
-
-
+    /**
+     * Helper method to notify the user about goal progress.
+     *
+     * @param goal    The goal for which the notification is being sent.
+     * @param title   The title of the notification.
+     * @param message The message of the notification.
+     */
+    private void notifyUserAboutGoalProgress(Goal goal, String title, String message) {
+        Notification notification = new Notification();
+        notification.setUserId(goal.getUserId());
+        notification.setTitle(title);
+        notification.setMessage(message);
+        notificationService.sendNotification(notification);
+        notificationService.sendEmailNotification(notification);
+    }
 }
