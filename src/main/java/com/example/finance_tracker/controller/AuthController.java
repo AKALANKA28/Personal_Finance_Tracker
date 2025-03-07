@@ -3,6 +3,7 @@ package com.example.finance_tracker.controller;
 import com.example.finance_tracker.model.User;
 import com.example.finance_tracker.service.UserService;
 import com.example.finance_tracker.util.JwtUtil;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +36,7 @@ public class AuthController {
 
     // Register a new user
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@RequestBody User user) {
+    public ResponseEntity<User> registerUser(@Valid @RequestBody User user) {
         User registeredUser = userService.registerUser(user);
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()

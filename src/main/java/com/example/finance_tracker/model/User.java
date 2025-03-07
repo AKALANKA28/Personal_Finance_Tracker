@@ -1,5 +1,9 @@
 package com.example.finance_tracker.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,11 +26,34 @@ public class User implements UserDetails {
     // Getters and Setters
 
     private String id;
+    @NotNull(message = "Username is required")
+    @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
     private String username;
+
+    @NotNull(message = "Email is required")
+    @Email(message = "Email must be valid")
+    private String email;
+
+    @NotNull(message = "Password is required")
+    @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
     private List<String> roles = Collections.emptyList();
     private String baseCurrency;
 
+    @JsonIgnore
+    private boolean authorities;
+
+    @JsonIgnore
+    private boolean accountNonLocked;
+
+    @JsonIgnore
+    private boolean accountNonExpired;
+
+    @JsonIgnore
+    private boolean credentialsNonExpired;
+
+    @JsonIgnore
+    private boolean enabled;
 
     public void setRoles(List<String> roles) {
         this.roles = roles != null ? roles : Collections.emptyList();

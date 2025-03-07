@@ -34,13 +34,12 @@ public class GoalsAndSavingsController {
     @PutMapping("/{id}")
     @PreAuthorize("@goalService.isOwner(#id, authentication.principal.id)") // Make sure the user is the owner of the goal
     public ResponseEntity<Goal> updateGoal(@PathVariable String id, @RequestBody Goal goal, @RequestAttribute("authenticatedUserId") String authenticatedUserId) {
-        goal.setId(id); // Ensure the ID matches the path variable
-        goal.setUserId(authenticatedUserId); // Automatically set the userId when updating
+        goal.setId(id);
+        goal.setUserId(authenticatedUserId);
 
         Goal updatedGoal = goalsAndSavingsService.updateGoal(goal);
         return ResponseEntity.ok(updatedGoal);
     }
-
 
     // Delete a goal
     @DeleteMapping("/{id}")
@@ -66,16 +65,29 @@ public class GoalsAndSavingsController {
         return ResponseEntity.ok(goal);
     }
 
+    /**
+     * Add a manual contribution to a goal.
+     *
+     * @param id     The ID of the goal.
+     * @param amount The amount to be added as a manual contribution.
+     * @return The updated goal.
+     */
+    @PostMapping("/{id}/add-contribution")
+    @PreAuthorize("@goalService.isOwner(#id, authentication.principal.id)")
+    public ResponseEntity<Goal> addManualContribution(
+            @PathVariable String id,
+            @RequestParam double amount) {
+        Goal updatedGoal = goalsAndSavingsService.addManualContribution(id, amount);
+        return ResponseEntity.ok(updatedGoal);
+    }
 
-    /// ////////////////
     // Track progress for a specific goal
     @PostMapping("/{id}/track-progress")
     @PreAuthorize("@goalService.isOwner(#id, authentication.principal.id)")
-    public ResponseEntity<Void> trackGoalProgress(@PathVariable String id) {
-        goalsAndSavingsService.trackGoalProgress(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Goal> trackGoalProgress(@PathVariable String id) {
+        Goal updatedGoal = goalsAndSavingsService.trackGoalProgress(id);
+        return ResponseEntity.ok(updatedGoal);
     }
-
 
     // Calculate the remaining amount needed for a specific goal
     @GetMapping("/{id}/remaining-amount")
@@ -114,7 +126,6 @@ public class GoalsAndSavingsController {
 
         return ResponseEntity.ok(overdueGoals);
     }
-
 
     @PostMapping("/check-near-overdue")
     @PreAuthorize("hasRole('ROLE_ADMIN')")

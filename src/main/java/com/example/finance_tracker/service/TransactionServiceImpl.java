@@ -4,6 +4,7 @@ import com.example.finance_tracker.model.Transaction;
 import com.example.finance_tracker.model.Income;
 import com.example.finance_tracker.model.Expense;
 import com.example.finance_tracker.repository.TransactionRepository;
+import com.example.finance_tracker.util.CurrencyUtil;
 import com.example.finance_tracker.util.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,14 +20,16 @@ public class TransactionServiceImpl implements TransactionService {
     private final CurrencyConverter currencyConverter;
     private final IncomeService incomeService;
     private final ExpenseService expenseService;
+    private final CurrencyUtil currencyUtil;
 
     @Autowired
     public TransactionServiceImpl(TransactionRepository transactionRepository, CurrencyConverter currencyConverter,
-                                  IncomeService incomeService, ExpenseService expenseService) {
+                                  IncomeService incomeService, ExpenseService expenseService, CurrencyUtil currencyUtil) {
         this.transactionRepository = transactionRepository;
         this.currencyConverter = currencyConverter;
         this.incomeService = incomeService;
         this.expenseService = expenseService;
+        this.currencyUtil = currencyUtil;
     }
 
     @Override
@@ -121,8 +124,11 @@ public class TransactionServiceImpl implements TransactionService {
         String originalCurrency = transaction.getCurrencyCode();
         double originalAmount = transaction.getAmount();
 
+        // Fetch the user's base currency
+        String baseCurrency = currencyUtil.getBaseCurrencyForUser(transaction.getUserId());
+
         // Convert the amount to the preferred currency using CurrencyConverter
-        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount,  "LKR");
+        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount, baseCurrency);
 
         // Create a new transaction object with the converted amount and preferred currency
         return getTransaction(transaction, preferredCurrency, convertedAmount);
