@@ -38,7 +38,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void markNotificationAsRead(String notificationId) {
-        Notification notification = notificationRepository.findById(notificationId).orElseThrow();
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
         notification.setRead(true);
         notificationRepository.save(notification);
     }

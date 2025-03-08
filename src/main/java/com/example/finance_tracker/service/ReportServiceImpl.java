@@ -90,7 +90,7 @@ public class ReportServiceImpl implements ReportService {
 
     // Helper Methods
 
-    private Map<String, Double> calculateIncomeExpenseAndNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
+    Map<String, Double> calculateIncomeExpenseAndNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
         // Reuse existing methods to calculate totals
         double totalIncome = incomeService.calculateTotalIncomeInBaseCurrency(userId);
         double totalExpenses = expenseService.calculateTotalExpensesInBaseCurrency(userId);
@@ -104,7 +104,7 @@ public class ReportServiceImpl implements ReportService {
         return result;
     }
 
-    private Map<String, Map<String, Object>> calculateSpendingTrends(String userId, List<Budget> budgets, List<Expense> expenses, LocalDate startDate, LocalDate endDate) {
+    Map<String, Map<String, Object>> calculateSpendingTrends(String userId, List<Budget> budgets, List<Expense> expenses, LocalDate startDate, LocalDate endDate) {
         Map<String, Map<String, Object>> spendingTrends = new HashMap<>();
 
         // Fetch the user's base currency
