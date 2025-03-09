@@ -5,16 +5,20 @@ import com.example.finance_tracker.model.Income;
 import com.example.finance_tracker.model.Expense;
 import com.example.finance_tracker.repository.TransactionRepository;
 import com.example.finance_tracker.util.CurrencyUtil;
-import com.example.finance_tracker.util.ResourceNotFoundException;
+import com.example.finance_tracker.exception.ResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service("transactionService")
 public class TransactionServiceImpl implements TransactionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(TransactionServiceImpl.class);
 
     private final TransactionRepository transactionRepository;
     private final CurrencyConverter currencyConverter;
@@ -23,7 +27,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final CurrencyUtil currencyUtil;
 
     @Autowired
-    public TransactionServiceImpl(TransactionRepository transactionRepository, CurrencyConverter currencyConverter,
+    public TransactionServiceImpl(TransactionRepository transactionRepository, CurrencyConverterImpl currencyConverterImpl, CurrencyConverter currencyConverter,
                                   IncomeService incomeService, ExpenseService expenseService, CurrencyUtil currencyUtil) {
         this.transactionRepository = transactionRepository;
         this.currencyConverter = currencyConverter;
@@ -34,6 +38,8 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public Transaction addTransaction(Transaction transaction) {
+        String baseCurrency = currencyUtil.getBaseCurrencyForUser(transaction.getUserId());
+        transaction.setCurrencyCode(baseCurrency);
         Transaction savedTransaction = transactionRepository.save(transaction);
 
         // Automatically create an income or expense record based on the transaction type
@@ -41,13 +47,15 @@ public class TransactionServiceImpl implements TransactionService {
             Income income = new Income();
             income.setUserId(transaction.getUserId());
             income.setAmount(transaction.getAmount());
-            income.setCurrencyCode(transaction.getCurrencyCode());
+            income.setCurrencyCode(baseCurrency);
             income.setSource(transaction.getSource());
             income.setDate(transaction.getDate());
             incomeService.addIncome(income);
         } else if ("Expense".equalsIgnoreCase(transaction.getType())) {
             Expense expense = getExpense(transaction);
-
+            // Set the currency code
+            expense.setCurrencyCode(baseCurrency);
+            // Add the expense
             expenseService.addExpense(expense);
         } else {
             throw new IllegalArgumentException("Invalid transaction type. Must be 'Income' or 'Expense'.");
@@ -94,9 +102,8 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public List<Transaction> getTransactionsByTags(String userId, List<String> tags) {
-        return transactionRepository.findByUserIdAndTagsIn(userId, Collections.singleton(tags));
+        return transactionRepository.findByUserIdAndTagsIn(userId, tags);
     }
-
     @Override
     public Transaction getTransactionById(String id) {
         return transactionRepository.findById(id).orElse(null);
@@ -111,12 +118,32 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public List<Transaction> getTransactionsByUserInPreferredCurrency(String userId, String preferredCurrency) {
+        // Fetch the user's base currency
+        String baseCurrency = currencyUtil.getBaseCurrencyForUser(userId);
+
+        // Fetch all transactions for the user
         List<Transaction> transactions = transactionRepository.findByUserId(userId);
 
-        // Convert each transaction's amount to the preferred currency
-        return transactions.stream()
-                .map(transaction -> convertTransactionToPreferredCurrency(transaction, preferredCurrency))
-                .collect(Collectors.toList());
+        // Convert each transaction to the preferred currency
+        List<Transaction> convertedTransactions = new ArrayList<>();
+        for (Transaction transaction : transactions) {
+            double convertedAmount = currencyConverter.convertCurrency(
+                    transaction.getCurrencyCode(),
+                    preferredCurrency,
+                    transaction.getAmount(),
+                    baseCurrency
+            );
+
+            // Log the conversion details
+            logger.info("Converting {} {} to {} using base currency {}", transaction.getAmount(), transaction.getCurrencyCode(), preferredCurrency, baseCurrency);
+            logger.info("Converted Amount: {}", convertedAmount);
+
+            // Create a new transaction object with the converted amount and preferred currency
+            Transaction convertedTransaction = getTransaction(transaction, preferredCurrency, convertedAmount);
+            convertedTransactions.add(convertedTransaction);
+        }
+
+        return convertedTransactions;
     }
 
     @Override
@@ -130,9 +157,14 @@ public class TransactionServiceImpl implements TransactionService {
         // Convert the amount to the preferred currency using CurrencyConverter
         double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount, baseCurrency);
 
+        // Log the conversion details
+        logger.info("Converting {} {} to {} using base currency {}", originalAmount, originalCurrency, preferredCurrency, baseCurrency);
+        logger.info("Converted Amount: {}", convertedAmount);
+
         // Create a new transaction object with the converted amount and preferred currency
         return getTransaction(transaction, preferredCurrency, convertedAmount);
     }
+
 
     private static Transaction getTransaction(Transaction transaction, String preferredCurrency, double convertedAmount) {
         Transaction convertedTransaction = new Transaction();

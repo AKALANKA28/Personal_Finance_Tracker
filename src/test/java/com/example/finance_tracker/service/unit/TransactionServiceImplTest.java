@@ -1,11 +1,15 @@
-package com.example.finance_tracker.service;
+package com.example.finance_tracker.service.unit;
 
 import com.example.finance_tracker.model.Transaction;
 import com.example.finance_tracker.model.Income;
 import com.example.finance_tracker.model.Expense;
 import com.example.finance_tracker.repository.TransactionRepository;
+import com.example.finance_tracker.service.CurrencyConverterImpl;
+import com.example.finance_tracker.service.ExpenseService;
+import com.example.finance_tracker.service.IncomeService;
+import com.example.finance_tracker.service.TransactionServiceImpl;
 import com.example.finance_tracker.util.CurrencyUtil;
-import com.example.finance_tracker.util.ResourceNotFoundException;
+import com.example.finance_tracker.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -25,7 +29,7 @@ class TransactionServiceImplTest {
     private TransactionRepository transactionRepository;
 
     @Mock
-    private CurrencyConverter currencyConverter;
+    private CurrencyConverterImpl currencyConverterImpl;
 
     @Mock
     private IncomeService incomeService;
@@ -181,7 +185,7 @@ class TransactionServiceImplTest {
         transaction.setUserId(userId);
         transaction.setTags(tags);
 
-        when(transactionRepository.findByUserIdAndTagsIn(userId, Collections.singleton(tags)))
+        when(transactionRepository.findByUserIdAndTagsIn(userId, tags))
                 .thenReturn(Collections.singletonList(transaction));
 
         // Act
@@ -189,7 +193,7 @@ class TransactionServiceImplTest {
 
         // Assert
         assertEquals(1, result.size());
-        verify(transactionRepository, times(1)).findByUserIdAndTagsIn(userId, Collections.singleton(tags));
+        verify(transactionRepository, times(1)).findByUserIdAndTagsIn(userId, tags);
     }
 
     @Test
@@ -281,7 +285,7 @@ class TransactionServiceImplTest {
         when(currencyUtil.getBaseCurrencyForUser(userId)).thenReturn(baseCurrency);
 
         // Mock currencyConverter to return the converted amount
-        when(currencyConverter.convertCurrency("USD", preferredCurrency, 100.0, baseCurrency))
+        when(currencyConverterImpl.convertCurrency("USD", preferredCurrency, 100.0, baseCurrency))
                 .thenReturn(85.0); // Expected converted amount
 
         // Act
@@ -295,6 +299,6 @@ class TransactionServiceImplTest {
         // Verify interactions
         verify(transactionRepository, times(1)).findByUserId(userId);
         verify(currencyUtil, times(1)).getBaseCurrencyForUser(userId);
-        verify(currencyConverter, times(1)).convertCurrency("USD", preferredCurrency, 100.0, baseCurrency);
+        verify(currencyConverterImpl, times(1)).convertCurrency("USD", preferredCurrency, 100.0, baseCurrency);
     }
 }

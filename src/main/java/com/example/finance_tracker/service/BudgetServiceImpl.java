@@ -3,14 +3,11 @@ package com.example.finance_tracker.service;
 import com.example.finance_tracker.model.*;
 import com.example.finance_tracker.repository.BudgetRepository;
 import com.example.finance_tracker.repository.ExpenseRepository;
-import com.example.finance_tracker.repository.IncomeRepository;
 import com.example.finance_tracker.util.CurrencyUtil;
-import com.example.finance_tracker.util.ResourceNotFoundException;
+import com.example.finance_tracker.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.*;
 
 @Service("budgetService")
@@ -19,16 +16,16 @@ public class BudgetServiceImpl implements BudgetService {
     private final BudgetRepository budgetRepository;
     private final NotificationService notificationService;
     private final ExpenseRepository expenseRepository;
-    private final CurrencyConverter currencyConverter;
+    private final CurrencyConverterImpl currencyConverterImpl;
     private final GoalsAndSavingsService goalsAndSavingsService;
     private final CurrencyUtil currencyUtil;
     @Autowired
     public BudgetServiceImpl(BudgetRepository budgetRepository, NotificationService notificationService,
-                             ExpenseRepository expenseRepository, CurrencyConverter currencyConverter, GoalsAndSavingsService goalsAndSavingsService, CurrencyUtil currencyUtil) {
+                             ExpenseRepository expenseRepository, CurrencyConverterImpl currencyConverterImpl, GoalsAndSavingsService goalsAndSavingsService, CurrencyUtil currencyUtil) {
         this.budgetRepository = budgetRepository;
         this.notificationService = notificationService;
         this.expenseRepository = expenseRepository;
-        this.currencyConverter = currencyConverter;
+        this.currencyConverterImpl = currencyConverterImpl;
         this.goalsAndSavingsService = goalsAndSavingsService;
         this.currencyUtil = currencyUtil;
     }
@@ -58,15 +55,19 @@ public class BudgetServiceImpl implements BudgetService {
     @Override
     public void checkBudgetExceeded(String userId) {
         List<Budget> budgets = budgetRepository.findByUserId(userId);
-        LocalDate now = LocalDate.now();
-        int currentMonth = now.getMonthValue();
-        int currentYear = now.getYear();
+        Date now = new Date(); // Current date
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(now);
 
         // Fetch the user's base currency
         String baseCurrency = currencyUtil.getBaseCurrencyForUser(userId);
 
-        LocalDate startDate = LocalDate.of(currentYear, currentMonth, 1);
-        LocalDate endDate = LocalDate.of(currentYear, currentMonth, now.lengthOfMonth());
+        calendar.set(Calendar.DAY_OF_MONTH, 1);
+        Date startDate = calendar.getTime();
+
+        // Set the end date to the last day of the current month
+        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+        Date endDate = calendar.getTime();
 
         for (Budget budget : budgets) {
             // Fetch expenses for the current month and year
@@ -75,7 +76,7 @@ public class BudgetServiceImpl implements BudgetService {
 
             // Calculate total expenses in the budget's currency
             double totalExpenses = expenses.stream()
-                    .mapToDouble(expense -> currencyConverter.convertCurrency(
+                    .mapToDouble(expense -> currencyConverterImpl.convertCurrency(
                             expense.getCurrencyCode(),
                             budget.getCurrencyCode(),
                             expense.getAmount(),
@@ -105,8 +106,14 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Override
     public void provideBudgetAdjustmentRecommendations(String userId) {
-        LocalDate now = LocalDate.now();
-        LocalDate threeMonthsAgo = now.minusMonths(3);
+        // Get the current date
+        Date now = new Date();
+
+        // Calculate the date 3 months ago
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(now);
+        calendar.add(Calendar.MONTH, -3);
+        Date threeMonthsAgo = calendar.getTime();
 
         // Fetch the user's base currency
         String baseCurrency = currencyUtil.getBaseCurrencyForUser(userId);
@@ -124,11 +131,11 @@ public class BudgetServiceImpl implements BudgetService {
             // Calculate total spending for the budget category in the base currency
             double totalSpending = expenses.stream()
                     .filter(expense -> expense.getCategory().equals(budget.getCategory()))
-                    .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount(), baseCurrency))
+                    .mapToDouble(expense -> currencyConverterImpl.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount(), baseCurrency))
                     .sum();
 
             // Convert the budget limit to the base currency
-            double budgetLimit = currencyConverter.convertToBaseCurrency(budget.getCurrencyCode(), budget.getLimit(), baseCurrency);
+            double budgetLimit = currencyConverterImpl.convertToBaseCurrency(budget.getCurrencyCode(), budget.getLimit(), baseCurrency);
 
             if (totalSpending > budgetLimit * 1.1) {
                 recommendations.add(String.format(
@@ -144,7 +151,7 @@ public class BudgetServiceImpl implements BudgetService {
         }
 
         // Add net savings to recommendations
-        recommendations.add(String.format( "Your net savings over the last 3 months: %.2f %s",
+        recommendations.add(String.format("Your net savings over the last 3 months: %.2f %s",
                 netSavings, baseCurrency));
 
         // Notify the user with recommendations
@@ -155,7 +162,6 @@ public class BudgetServiceImpl implements BudgetService {
             notificationService.sendNotification(notification);
         }
     }
-
 
     @Override
     public void allocateBudgetToGoal(String userId, String goalId, double amount) {

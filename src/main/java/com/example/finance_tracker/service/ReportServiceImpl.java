@@ -2,25 +2,21 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.Budget;
 import com.example.finance_tracker.model.Expense;
-import com.example.finance_tracker.model.Income;
 import com.example.finance_tracker.repository.BudgetRepository;
 import com.example.finance_tracker.repository.ExpenseRepository;
-import com.example.finance_tracker.repository.IncomeRepository;
 import com.example.finance_tracker.util.CurrencyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class ReportServiceImpl implements ReportService {
 
     private final BudgetRepository budgetRepository;
     private final ExpenseRepository expenseRepository;
-    private final CurrencyConverter currencyConverter;
+    private final CurrencyConverterImpl currencyConverterImpl;
     private final ExpenseService expenseService;
     private final IncomeService incomeService;
     private final GoalsAndSavingsService goalsAndSavingsService;
@@ -28,11 +24,11 @@ public class ReportServiceImpl implements ReportService {
 
     @Autowired
     public ReportServiceImpl(BudgetRepository budgetRepository, ExpenseRepository expenseRepository,
-                            CurrencyConverter currencyConverter, ExpenseService expenseService, IncomeService incomeService,
+                             CurrencyConverterImpl currencyConverterImpl, ExpenseService expenseService, IncomeService incomeService,
                              GoalsAndSavingsService goalsAndSavingsService, CurrencyUtil currencyUtil) {
         this.budgetRepository = budgetRepository;
         this.expenseRepository = expenseRepository;
-        this.currencyConverter = currencyConverter;
+        this.currencyConverterImpl = currencyConverterImpl;
         this.expenseService = expenseService;
         this.incomeService = incomeService;
         this.goalsAndSavingsService = goalsAndSavingsService;
@@ -40,7 +36,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public Map<String, Object> generateSpendingTrendReport(String userId, LocalDate startDate, LocalDate endDate) {
+    public Map<String, Object> generateSpendingTrendReport(String userId, Date startDate, Date endDate) {
         // Fetch budgets
         List<Budget> budgets = budgetRepository.findByUserId(userId);
 
@@ -57,8 +53,9 @@ public class ReportServiceImpl implements ReportService {
         return createReport(userId, startDate, endDate, totalIncome, totalExpenses, netSavings, spendingTrends);
     }
 
+
     @Override
-    public Map<String, Object> generateIncomeVsExpenseReport(String userId, LocalDate startDate, LocalDate endDate) {
+    public Map<String, Object> generateIncomeVsExpenseReport(String userId, Date startDate, Date endDate) {
         // Calculate total income, expenses, and net savings (converted to base currency)
         Map<String, Double> incomeExpenseData = calculateIncomeExpenseAndNetSavings(userId, startDate, endDate);
         double totalIncome = incomeExpenseData.get("totalIncome");
@@ -70,9 +67,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public Map<String, Object> generateCategoryWiseReport(String userId, String category, LocalDate startDate, LocalDate endDate) {
-        // Fetch expenses for the specified category
-        List<Expense> expenses = expenseRepository.findByUserIdAndCategoryAndDateBetween(userId, category, startDate, endDate);
+    public Map<String, Object> generateCategoryWiseReport(String userId, String category, Date startDate, Date endDate) {
 
         // Calculate total spending for the category (converted to base currency)
         double totalSpending = expenseService.calculateTotalExpensesInBaseCurrency(userId); // Reuse existing method
@@ -90,7 +85,7 @@ public class ReportServiceImpl implements ReportService {
 
     // Helper Methods
 
-    Map<String, Double> calculateIncomeExpenseAndNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
+    Map<String, Double> calculateIncomeExpenseAndNetSavings(String userId, Date startDate, Date endDate) {
         // Reuse existing methods to calculate totals
         double totalIncome = incomeService.calculateTotalIncomeInBaseCurrency(userId);
         double totalExpenses = expenseService.calculateTotalExpensesInBaseCurrency(userId);
@@ -104,20 +99,26 @@ public class ReportServiceImpl implements ReportService {
         return result;
     }
 
-    Map<String, Map<String, Object>> calculateSpendingTrends(String userId, List<Budget> budgets, List<Expense> expenses, LocalDate startDate, LocalDate endDate) {
+    public Map<String, Map<String, Object>> calculateSpendingTrends(String userId, List<Budget> budgets, List<Expense> expenses, Date startDate, Date endDate) {
         Map<String, Map<String, Object>> spendingTrends = new HashMap<>();
 
         // Fetch the user's base currency
         String baseCurrency = currencyUtil.getBaseCurrencyForUser(userId);
 
+        // Calculate the number of months between startDate and endDate
+        long numberOfMonths = getNumberOfMonths(startDate, endDate) + 1; // Include the start month
+
         for (Budget budget : budgets) {
             String category = budget.getCategory();
+
+            // Calculate total spending for the category (converted to base currency)
             double totalSpending = expenses.stream()
                     .filter(expense -> expense.getCategory().equals(category))
-                    .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount(),  baseCurrency))
+                    .mapToDouble(expense -> currencyConverterImpl.convertToBaseCurrency(
+                            expense.getCurrencyCode(), expense.getAmount(), baseCurrency))
                     .sum();
 
-            long numberOfMonths = startDate.until(endDate).toTotalMonths() + 1; // Include the start month
+            // Calculate average spending
             double averageSpending = totalSpending / numberOfMonths;
 
             // Compare spending against budget
@@ -131,6 +132,25 @@ public class ReportServiceImpl implements ReportService {
         return spendingTrends;
     }
 
+    // Helper method to calculate the number of months between two Date objects
+    private long getNumberOfMonths(Date startDate, Date endDate) {
+        Calendar startCal = Calendar.getInstance();
+        startCal.setTime(startDate);
+
+        Calendar endCal = Calendar.getInstance();
+        endCal.setTime(endDate);
+
+        int startYear = startCal.get(Calendar.YEAR);
+        int startMonth = startCal.get(Calendar.MONTH);
+
+        int endYear = endCal.get(Calendar.YEAR);
+        int endMonth = endCal.get(Calendar.MONTH);
+
+        // Calculate the total number of months
+        return (endYear - startYear) * 12L + (endMonth - startMonth);
+    }
+
+
     private Map<String, Object> createCategoryData(double totalSpending, double averageSpending, double budgetLimit, String budgetStatus) {
         Map<String, Object> categoryData = new HashMap<>();
         categoryData.put("totalSpending", totalSpending);
@@ -140,7 +160,7 @@ public class ReportServiceImpl implements ReportService {
         return categoryData;
     }
 
-    private Map<String, Object> createReport(String userId, LocalDate startDate, LocalDate endDate,
+    private Map<String, Object> createReport(String userId, Date startDate, Date endDate,
                                              double totalIncome, double totalExpenses, double netSavings,
                                              Map<String, Map<String, Object>> spendingTrends) {
         Map<String, Object> report = new HashMap<>();

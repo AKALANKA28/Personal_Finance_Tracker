@@ -81,16 +81,6 @@ public class TransactionController {
         return ResponseEntity.ok(transaction);
     }
 
-    @GetMapping("/user/{userId}/preferred-currency")
-    @PreAuthorize("#userId == authentication.principal.id")
-    public ResponseEntity<List<Transaction>> getTransactionsByUserInPreferredCurrency(
-            @PathVariable String userId,
-            @RequestParam String preferredCurrency) {
-
-        List<Transaction> transactions = transactionService.getTransactionsByUserInPreferredCurrency(userId, preferredCurrency);
-        return ResponseEntity.ok(transactions);
-    }
-
     @GetMapping("/{transactionId}/preferred-currency")
     @PreAuthorize("@transactionService.isOwner(#transactionId, authentication.principal.id)")
     public ResponseEntity<Transaction> getTransactionInPreferredCurrency(
@@ -104,6 +94,16 @@ public class TransactionController {
 
         Transaction convertedTransaction = transactionService.convertTransactionToPreferredCurrency(transaction, preferredCurrency);
         return ResponseEntity.ok(convertedTransaction);
+    }
+
+    @GetMapping("/user/{userId}/preferred-currency")
+    @PreAuthorize("#userId == authentication.principal.id")
+    public ResponseEntity<List<Transaction>> getTransactionsByUserInPreferredCurrency(
+            @PathVariable String userId,
+            @RequestParam String preferredCurrency) {
+
+        List<Transaction> transactions = transactionService.getTransactionsByUserInPreferredCurrency(userId, preferredCurrency);
+        return ResponseEntity.ok(transactions);
     }
 
 

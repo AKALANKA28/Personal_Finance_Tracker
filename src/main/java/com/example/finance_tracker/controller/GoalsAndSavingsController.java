@@ -8,7 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -150,13 +153,25 @@ public class GoalsAndSavingsController {
             @PathVariable String userId,
             @RequestParam String startDate,
             @RequestParam String endDate) {
-        LocalDate start = LocalDate.parse(startDate);
-        LocalDate end = LocalDate.parse(endDate);
 
+        // Define the date format (e.g., "yyyy-MM-dd")
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        // Parse the date strings into java.util.Date
+        Date start;
+        Date end;
+        try {
+            start = dateFormat.parse(startDate);
+            end = dateFormat.parse(endDate);
+        } catch (ParseException e) {
+            // Handle parsing errors (e.g., invalid date format)
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Calculate net savings
         double netSavings = goalsAndSavingsService.calculateNetSavings(userId, start, end);
         return ResponseEntity.ok(netSavings);
     }
-
     // Allocate savings to active goals
     @PostMapping("/user/{userId}/allocate-savings")
     @PreAuthorize("#userId == authentication.principal.id")

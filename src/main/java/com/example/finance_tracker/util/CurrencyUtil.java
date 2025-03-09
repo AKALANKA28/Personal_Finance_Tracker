@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import com.example.finance_tracker.repository.UserRepository;
 import com.example.finance_tracker.model.User;
-import com.example.finance_tracker.util.ResourceNotFoundException;
+import com.example.finance_tracker.exception.ResourceNotFoundException;
 
 @Component
 public class CurrencyUtil {

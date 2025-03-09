@@ -20,4 +20,6 @@ public class Budget {
     private String currencyCode;
     private String goalId;
 
+    public Budget(String number, String user1, String food, double v, String usd) {
+    }
 }

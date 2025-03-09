@@ -1,8 +1,9 @@
-package com.example.finance_tracker.service;
+package com.example.finance_tracker.service.unit;
 
 import com.example.finance_tracker.model.Notification;
 import com.example.finance_tracker.repository.NotificationRepository;
-import com.example.finance_tracker.util.ResourceNotFoundException;
+import com.example.finance_tracker.exception.ResourceNotFoundException;
+import com.example.finance_tracker.service.NotificationServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

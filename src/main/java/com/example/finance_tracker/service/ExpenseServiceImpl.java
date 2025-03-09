@@ -3,7 +3,7 @@ package com.example.finance_tracker.service;
 import com.example.finance_tracker.model.Expense;
 import com.example.finance_tracker.repository.ExpenseRepository;
 import com.example.finance_tracker.util.CurrencyUtil;
-import com.example.finance_tracker.util.ResourceNotFoundException;
+import com.example.finance_tracker.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +14,13 @@ import java.util.stream.Collectors;
 public class ExpenseServiceImpl implements ExpenseService {
 
     private final ExpenseRepository expenseRepository;
-    private final CurrencyConverter currencyConverter;
+    private final CurrencyConverterImpl currencyConverterImpl;
     private final CurrencyUtil currencyUtil;
 
     @Autowired
-    public ExpenseServiceImpl(ExpenseRepository expenseRepository, CurrencyConverter currencyConverter, CurrencyUtil currencyUtil) {
+    public ExpenseServiceImpl(ExpenseRepository expenseRepository, CurrencyConverterImpl currencyConverterImpl, CurrencyUtil currencyUtil) {
         this.expenseRepository = expenseRepository;
-        this.currencyConverter = currencyConverter;
+        this.currencyConverterImpl = currencyConverterImpl;
         this.currencyUtil = currencyUtil;
     }
 
@@ -71,7 +71,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         String baseCurrency = currencyUtil.getBaseCurrencyForUser(expense.getUserId());
 
         // Convert the amount to the preferred currency
-        double convertedAmount = currencyConverter.convertCurrency(originalCurrency, preferredCurrency, originalAmount, baseCurrency);
+        double convertedAmount = currencyConverterImpl.convertCurrency(originalCurrency, preferredCurrency, originalAmount, baseCurrency);
 
 
         // Create a new expense object with the converted amount and preferred currency
@@ -108,7 +108,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         // Convert each expense's amount to the base currency and sum them up
         return expenses.stream()
-                .mapToDouble(expense -> currencyConverter.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount(),  baseCurrency))
+                .mapToDouble(expense -> currencyConverterImpl.convertToBaseCurrency(expense.getCurrencyCode(), expense.getAmount(),  baseCurrency))
                 .sum();
     }
 

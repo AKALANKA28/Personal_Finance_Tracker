@@ -1,13 +1,12 @@
 package com.example.finance_tracker.controller;
 
-import com.example.finance_tracker.model.Report;
 import com.example.finance_tracker.service.ReportService;
-import com.example.finance_tracker.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 
@@ -17,8 +16,6 @@ public class ReportController {
 
     private final ReportService reportService;
 
-    @Autowired
-    private TransactionService transactionService;
 
     @Autowired
     public ReportController(ReportService reportService) {
@@ -29,9 +26,11 @@ public class ReportController {
     public ResponseEntity<Map<String, Object>> generateSpendingTrendReport(
             @PathVariable String userId,
             @RequestParam String startDate,
-            @RequestParam String endDate) {
-        LocalDate start = LocalDate.parse(startDate);
-        LocalDate end = LocalDate.parse(endDate);
+            @RequestParam String endDate) throws ParseException {
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date start = dateFormat.parse(startDate);
+        Date end = dateFormat.parse(endDate);
 
         Map<String, Object> report = reportService.generateSpendingTrendReport(userId, start, end);
         return ResponseEntity.ok(report);
@@ -41,9 +40,11 @@ public class ReportController {
     public ResponseEntity<Map<String, Object>> generateIncomeVsExpenseReport(
             @PathVariable String userId,
             @RequestParam String startDate,
-            @RequestParam String endDate) {
-        LocalDate start = LocalDate.parse(startDate);
-        LocalDate end = LocalDate.parse(endDate);
+            @RequestParam String endDate) throws ParseException {
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date start = dateFormat.parse(startDate);
+        Date end = dateFormat.parse(endDate);
 
         Map<String, Object> report = reportService.generateIncomeVsExpenseReport(userId, start, end);
         return ResponseEntity.ok(report);
@@ -54,9 +55,11 @@ public class ReportController {
             @PathVariable String userId,
             @RequestParam String category,
             @RequestParam String startDate,
-            @RequestParam String endDate) {
-        LocalDate start = LocalDate.parse(startDate);
-        LocalDate end = LocalDate.parse(endDate);
+            @RequestParam String endDate) throws ParseException {
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date start = dateFormat.parse(startDate);
+        Date end = dateFormat.parse(endDate);
 
         Map<String, Object> report = reportService.generateCategoryWiseReport(userId, category, start, end);
         return ResponseEntity.ok(report);

@@ -1,4 +1,4 @@
-package com.example.finance_tracker.util;
+package com.example.finance_tracker.exception;
 
 public class UserNotFoundException extends RuntimeException {
     public UserNotFoundException(String message) {

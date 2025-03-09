@@ -2,7 +2,7 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.Notification;
 import com.example.finance_tracker.repository.NotificationRepository;
-import com.example.finance_tracker.util.ResourceNotFoundException;
+import com.example.finance_tracker.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

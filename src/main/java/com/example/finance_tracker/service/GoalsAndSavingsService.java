@@ -3,6 +3,7 @@ package com.example.finance_tracker.service;
 import com.example.finance_tracker.model.Goal;
 
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 public interface GoalsAndSavingsService {
@@ -15,7 +16,7 @@ public interface GoalsAndSavingsService {
 
     Goal addManualContribution(String goalId, double amount);
 
-    double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate);
+    double calculateNetSavings(String userId, Date startDate, Date endDate);
 
     void allocateSavings(String userId, double amount);
 

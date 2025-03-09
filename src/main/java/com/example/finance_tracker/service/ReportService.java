@@ -11,9 +11,7 @@ public interface ReportService {
 //    Report generateIncomeVsExpenseReport(String userId, Date startDate, Date endDate);
 //    Report generateCategoryWiseReport(String userId, String category);
 
-    Map<String, Object> generateSpendingTrendReport(String userId, LocalDate startDate, LocalDate endDate);
-
-    Map<String, Object> generateIncomeVsExpenseReport(String userId, LocalDate startDate, LocalDate endDate);
-
-    Map<String, Object> generateCategoryWiseReport(String userId, String category, LocalDate startDate, LocalDate endDate);
+    Map<String, Object> generateSpendingTrendReport(String userId, Date startDate, Date endDate);
+    Map<String, Object> generateIncomeVsExpenseReport(String userId, Date startDate, Date endDate);
+    Map<String, Object> generateCategoryWiseReport(String userId, String category, Date startDate, Date endDate);
 }

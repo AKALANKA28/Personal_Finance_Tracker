@@ -1,8 +1,9 @@
-package com.example.finance_tracker.service;
+package com.example.finance_tracker.service.unit;
 
 import com.example.finance_tracker.model.User;
 import com.example.finance_tracker.repository.UserRepository;
-import com.example.finance_tracker.util.UserNotFoundException;
+import com.example.finance_tracker.exception.UserNotFoundException;
+import com.example.finance_tracker.service.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

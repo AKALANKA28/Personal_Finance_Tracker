@@ -1,4 +1,4 @@
-package com.example.finance_tracker.util;
+package com.example.finance_tracker.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

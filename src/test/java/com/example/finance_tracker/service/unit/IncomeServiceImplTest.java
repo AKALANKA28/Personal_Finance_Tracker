@@ -1,9 +1,11 @@
-package com.example.finance_tracker.service;
+package com.example.finance_tracker.service.unit;
 
 import com.example.finance_tracker.model.Income;
 import com.example.finance_tracker.repository.IncomeRepository;
+import com.example.finance_tracker.service.CurrencyConverterImpl;
+import com.example.finance_tracker.service.IncomeServiceImpl;
 import com.example.finance_tracker.util.CurrencyUtil;
-import com.example.finance_tracker.util.ResourceNotFoundException;
+import com.example.finance_tracker.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -12,7 +14,6 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -23,7 +24,7 @@ class IncomeServiceImplTest {
     private IncomeRepository incomeRepository;
 
     @Mock
-    private CurrencyConverter currencyConverter;
+    private CurrencyConverterImpl currencyConverterImpl;
 
     @Mock
     private CurrencyUtil currencyUtil;
@@ -149,7 +150,7 @@ class IncomeServiceImplTest {
         income.setAmount(1000.0);
 
         when(incomeRepository.findByUserId(userId)).thenReturn(Collections.singletonList(income));
-        when(currencyConverter.convertCurrency("USD", preferredCurrency, 1000.0, "LKR")).thenReturn(850.0);
+        when(currencyConverterImpl.convertCurrency("USD", preferredCurrency, 1000.0, "LKR")).thenReturn(850.0);
 
         // Act
         List<Income> result = incomeService.getIncomesByUserInPreferredCurrency(userId, preferredCurrency);
@@ -167,7 +168,7 @@ class IncomeServiceImplTest {
         income.setCurrencyCode("USD");
         income.setAmount(1000.0);
 
-        when(currencyConverter.convertCurrency("USD", "EUR", 1000.0, "LKR")).thenReturn(850.0);
+        when(currencyConverterImpl.convertCurrency("USD", "EUR", 1000.0, "LKR")).thenReturn(850.0);
 
         // Act
         Income result = incomeService.convertIncomeToPreferredCurrency(income, "EUR");
