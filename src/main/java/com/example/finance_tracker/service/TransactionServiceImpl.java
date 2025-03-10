@@ -53,9 +53,8 @@ public class TransactionServiceImpl implements TransactionService {
             incomeService.addIncome(income);
         } else if ("Expense".equalsIgnoreCase(transaction.getType())) {
             Expense expense = getExpense(transaction);
-            // Set the currency code
             expense.setCurrencyCode(baseCurrency);
-            // Add the expense
+
             expenseService.addExpense(expense);
         } else {
             throw new IllegalArgumentException("Invalid transaction type. Must be 'Income' or 'Expense'.");
@@ -68,7 +67,6 @@ public class TransactionServiceImpl implements TransactionService {
         Expense expense = new Expense();
         expense.setUserId(transaction.getUserId());
         expense.setAmount(transaction.getAmount());
-        expense.setCurrencyCode(transaction.getCurrencyCode());
         expense.setCategory(transaction.getCategory());
         expense.setDate(transaction.getDate());
         expense.setDescription(transaction.getDescription());

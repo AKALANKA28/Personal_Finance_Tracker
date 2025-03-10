@@ -13,6 +13,7 @@ import com.example.finance_tracker.util.CurrencyUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -47,7 +48,7 @@ public class ReportServiceImplIntegrationTest {
     private CurrencyUtil currencyUtil;
 
     @Mock
-    private CurrencyConverter currencyConverterImpl;
+    private CurrencyConverter currencyConverter;
 
     @Autowired
     private ExpenseService expenseService;
@@ -61,6 +62,8 @@ public class ReportServiceImplIntegrationTest {
     @BeforeEach
     public void setUp() {
         // Clear the database before each test
+        MockitoAnnotations.openMocks(this);
+
         budgetRepository.deleteAll();
         expenseRepository.deleteAll();
         incomeRepository.deleteAll();
