@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
@@ -55,6 +56,7 @@ public class ReportController {
     }
 
     @GetMapping("/income-vs-expense/{userId}")
+    @PreAuthorize("#userId == authentication.principal.id")
     @Operation(
             summary = "Generate income vs expense report",
             description = "Generate an income vs expense report for a specific user within a date range."
