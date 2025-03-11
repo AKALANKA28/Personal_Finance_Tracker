@@ -20,23 +20,34 @@ Before you begin, ensure you have the following installed on your system:
 
 1. **Clone the repository:**
 
+   Since this is a *private repository*, you need authentication to clone it. You can use the following method:
+   
+   ### Using HTTPS with Personal Access Token (Recommended)
+   
+   1. *Generate a Personal Access Token (PAT)*:
+      - Go to [GitHub → Settings → Developer Settings → Personal Access Tokens](https://github.com/settings/tokens)
+      - Click *Generate new token* (Use "Fine-grained tokens" for more control)
+      - Select necessary *repository permissions* (at least "read" access)
+      - Copy the token (you won't see it again)
+   
+   2. *Clone the repository using the url*:
       ```sh
       git clone https://github.com/SE1020-IT2070-OOP-DSA-25/project-IT22213730.git
       ```
 
-3. **Open the project in IntelliJ IDEA**:
+2. **Open the project in IntelliJ IDEA**:
    - Launch IntelliJ IDEA
    - Select Open and navigate to the cloned project directory
    - IntelliJ will automatically detect the pom.xml file and set up the project as a Maven project
 
-4. **Install dependencies**:
+3. **Install dependencies**:
    - IntelliJ will automatically download the dependencies specified in the pom.xml file
    - If not, you can manually trigger the dependency download by running:
      ```sh
      mvn clean install
      ```
 
-5. **Configure environment variables**:
+4. **Configure environment variables**:
    - Create an application.properties or application.yml file in the src/main/resources directory
    - Add the necessary configuration properties. For example:
      ```properties
@@ -63,11 +74,11 @@ Before you begin, ensure you have the following installed on your system:
      management.endpoints.web.exposure.include=*
      ```
 
-6. **Set up the database**:
+5. **Set up the database**:
    - Ensure your database server (e.g., MongoDB) is running
    - Create a database with the name specified in the spring.data.mongodb.uri property
 
-7. **Run the application**:
+6. **Run the application**:
    - In IntelliJ, navigate to the main application class (e.g., ProjectApplication.java)
    - Right-click on the class and select Run
    - Alternatively, you can run the application from the terminal:
@@ -180,7 +191,7 @@ In IntelliJ IDEA:
 - Right-click on the test class or test method and select **Run**
 - Alternatively, you can run all tests in the project by clicking on the **Run** menu and selecting **Run 'All Tests'**
 - To run via Maven, use this command in the terminal:
-  
+
   ```sh
   mvn test
   ```
