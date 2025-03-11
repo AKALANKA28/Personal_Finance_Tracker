@@ -29,20 +29,20 @@ public class BudgetServiceImplTest {
     @Mock
     private BudgetRepository budgetRepository;
 
-    @Mock
-    private NotificationService notificationService;
-
-    @Mock
-    private ExpenseRepository expenseRepository;
-
-    @Mock
-    private CurrencyConverterImpl currencyConverterImpl;
-
-    @Mock
-    private GoalsAndSavingsService goalsAndSavingsService;
-
-    @Mock
-    private CurrencyUtil currencyUtil;
+//    @Mock
+//    private NotificationService notificationService;
+//
+//    @Mock
+//    private ExpenseRepository expenseRepository;
+//
+//    @Mock
+//    private CurrencyConverterImpl currencyConverterImpl;
+//
+//    @Mock
+//    private GoalsAndSavingsService goalsAndSavingsService;
+//
+//    @Mock
+//    private CurrencyUtil currencyUtil;
 
     @InjectMocks
     private BudgetServiceImpl budgetService;
