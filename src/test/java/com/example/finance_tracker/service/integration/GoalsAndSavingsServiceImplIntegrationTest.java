@@ -1,13 +1,14 @@
-package com.example.finance_tracker.service.intergration;
+package com.example.finance_tracker.service.integration;
 
 import com.example.finance_tracker.model.Goal;
 import com.example.finance_tracker.repository.GoalRepository;
 import com.example.finance_tracker.service.GoalsAndSavingsServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Date;
 import java.util.List;
@@ -15,8 +16,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@ActiveProfiles("test") // Use a test profile with an in-memory database (e.g., H2)
 public class GoalsAndSavingsServiceImplIntegrationTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(GoalsAndSavingsServiceImplIntegrationTest.class);
 
     @Autowired
     private GoalsAndSavingsServiceImpl goalsAndSavingsService;

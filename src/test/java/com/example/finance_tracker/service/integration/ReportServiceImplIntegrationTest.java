@@ -1,4 +1,4 @@
-package com.example.finance_tracker.service.intergration;
+package com.example.finance_tracker.service.integration;
 
 import com.example.finance_tracker.model.Budget;
 import com.example.finance_tracker.model.Expense;
@@ -8,25 +8,22 @@ import com.example.finance_tracker.repository.BudgetRepository;
 import com.example.finance_tracker.repository.ExpenseRepository;
 import com.example.finance_tracker.repository.IncomeRepository;
 import com.example.finance_tracker.repository.UserRepository;
-import com.example.finance_tracker.service.*;
+import com.example.finance_tracker.service.ReportServiceImpl;
 import com.example.finance_tracker.util.CurrencyUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.Date;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
-@ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD) // Reset the database after each test
 public class ReportServiceImplIntegrationTest {
 
     @Autowired
@@ -44,44 +41,31 @@ public class ReportServiceImplIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
-    @Mock
+    @Autowired
     private CurrencyUtil currencyUtil;
-
-    @Mock
-    private CurrencyConverter currencyConverter;
-
-    @Autowired
-    private ExpenseService expenseService;
-
-    @Autowired
-    private IncomeService incomeService;
-
-    @Autowired
-    private GoalsAndSavingsService goalsAndSavingsService;
 
     @BeforeEach
     public void setUp() {
         // Clear the database before each test
-        MockitoAnnotations.openMocks(this);
-
         budgetRepository.deleteAll();
         expenseRepository.deleteAll();
         incomeRepository.deleteAll();
+//        userRepository.deleteAll();
     }
 
     @Test
     public void testGenerateSpendingTrendReport() {
-        // Add test data to the database
+        // Arrange
         User user = new User();
         user.setId("testuser");
         user.setBaseCurrency("USD");
-        userRepository.save(user); // Ensure the user exists
+        userRepository.save(user);
 
         Budget budget = new Budget();
         budget.setUserId("testuser");
         budget.setCategory("Groceries");
         budget.setLimit(1200.0);
-        budgetRepository.save(budget);
+        budgetRepository.save(budget); // Save the budget to the database
 
         Expense expense = new Expense();
         expense.setUserId("testuser");
@@ -89,34 +73,43 @@ public class ReportServiceImplIntegrationTest {
         expense.setAmount(1000.0);
         expense.setCurrencyCode("USD");
         expense.setDate(new Date(2023 - 1900, 9, 1)); // October 1, 2023
-        expenseRepository.save(expense);
+        expenseRepository.save(expense); // Save the expense to the database
 
         Income income = new Income();
         income.setUserId("testuser");
         income.setAmount(5000.0);
         income.setCurrencyCode("USD");
         income.setDate(new Date(2023 - 1900, 9, 1)); // October 1, 2023
-        incomeRepository.save(income);
+        incomeRepository.save(income); // Save the income to the database
 
-        // Mock currency conversion
-        when(currencyUtil.getBaseCurrencyForUser("testuser")).thenReturn("USD");
-        when(currencyConverter.convertToBaseCurrency(any(String.class), any(Double.class), any(String.class)))
-                .thenAnswer(invocation -> invocation.getArgument(1)); // Return the same amount
+        // Verify that the expense was saved correctly
+        Expense savedExpense = expenseRepository.findByUserId("testuser").get(0);
+        assertNotNull(savedExpense);
+        assertEquals(1000.0, savedExpense.getAmount());
+        assertEquals("Groceries", savedExpense.getCategory());
 
-        // Mock service methods
-        when(incomeService.calculateTotalIncomeInBaseCurrency("testuser")).thenReturn(5000.0);
-        when(expenseService.calculateTotalExpensesInBaseCurrency("testuser")).thenReturn(3000.0);
-        when(goalsAndSavingsService.calculateNetSavings("testuser", new Date(2023 - 1900, 9, 1), new Date(2023 - 1900, 9, 31)))
-                .thenReturn(2000.0);
+        // Act
+        Map<String, Object> report = reportService.generateSpendingTrendReport(
+                "testuser",
+                new Date(2023 - 1900, 9, 1), // October 1, 2023
+                new Date(2023 - 1900, 9, 31)  // October 31, 2023
+        );
 
-        // Generate the report
-        Map<String, Object> report = reportService.generateSpendingTrendReport("testuser", new Date(2023 - 1900, 9, 1), new Date(2023 - 1900, 9, 31));
-
-        // Verify the report
+        // Assert
         assertEquals("testuser", report.get("userId"));
         assertEquals(5000.0, report.get("totalIncome"));
-        assertEquals(3000.0, report.get("totalExpenses"));
-        assertEquals(2000.0, report.get("netSavings"));
-        assertEquals("Groceries", ((Map<?, ?>) report.get("spendingTrends")).keySet().iterator().next());
+        assertEquals(1000.0, report.get("totalExpenses"));
+        assertEquals(4000.0, report.get("netSavings"));
+
+        // Verify spending trends
+        Map<String, Object> spendingTrends = (Map<String, Object>) report.get("spendingTrends");
+        assertNotNull(spendingTrends);
+        assertEquals(1, spendingTrends.size());
+
+        Map<String, Object> groceriesTrend = (Map<String, Object>) spendingTrends.get("Groceries");
+        assertNotNull(groceriesTrend);
+        assertEquals(1000.0, groceriesTrend.get("totalSpending"));
+        assertEquals(1000.0, groceriesTrend.get("averageSpending"));
+        assertEquals("Within Budget", groceriesTrend.get("budgetStatus"));
     }
 }

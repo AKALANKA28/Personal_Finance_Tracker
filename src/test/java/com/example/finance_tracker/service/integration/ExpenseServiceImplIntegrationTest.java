@@ -1,20 +1,19 @@
-package com.example.finance_tracker.service.intergration;
+package com.example.finance_tracker.service.integration;
 
 import com.example.finance_tracker.model.Expense;
 import com.example.finance_tracker.repository.ExpenseRepository;
 import com.example.finance_tracker.service.ExpenseServiceImpl;
+import com.example.finance_tracker.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DataMongoTest  // Uses an in-memory MongoDB instance for testing
-@Import(ExpenseServiceImpl.class) // Import service for testing
+@SpringBootTest
 public class ExpenseServiceImplIntegrationTest {
 
     @Autowired
@@ -44,6 +43,24 @@ public class ExpenseServiceImplIntegrationTest {
         assertNotNull(savedExpense.getId());
         assertEquals("user123", savedExpense.getUserId());
         assertEquals(100.0, savedExpense.getAmount());
+        assertEquals("USD", savedExpense.getCurrencyCode());
+        assertEquals("Food", savedExpense.getCategory());
+    }
+
+    @Test
+    void testExpenseRepository() {
+        Expense expense = new Expense();
+        expense.setUserId("user123");
+        expense.setAmount(100.0);
+        expense.setCurrencyCode("USD");
+        expense.setCategory("Food");
+        expense = expenseRepository.save(expense);
+
+        assertNotNull(expense.getId(), "Expense ID should not be null after saving");
+
+        Expense retrievedExpense = expenseRepository.findById(expense.getId()).orElse(null);
+        assertNotNull(retrievedExpense, "Expense should be retrievable from the repository");
+        assertEquals("user123", retrievedExpense.getUserId());
     }
 
     @Test
@@ -54,15 +71,34 @@ public class ExpenseServiceImplIntegrationTest {
         expense.setAmount(100.0);
         expense.setCurrencyCode("USD");
         expense.setCategory("Food");
-        expense = expenseRepository.save(expense);
+        expense = expenseRepository.save(expense); // Save the expense
+
+        assertNotNull(expense, "Expense should not be null after saving"); // Verify expense is saved
 
         expense.setAmount(150.0); // Update amount
+        expense.setCategory("Groceries"); // Update category
 
         // Act
         Expense updatedExpense = expenseService.updateExpense(expense);
 
         // Assert
+        assertNotNull(updatedExpense, "Updated expense should not be null");
         assertEquals(150.0, updatedExpense.getAmount());
+        assertEquals("Groceries", updatedExpense.getCategory());
+    }
+
+    @Test
+    void updateExpense_ShouldThrowResourceNotFoundException_WhenExpenseNotFound() {
+        // Arrange
+        Expense expense = new Expense();
+        expense.setId("nonExistentId");
+        expense.setUserId("user123");
+        expense.setAmount(100.0);
+        expense.setCurrencyCode("USD");
+        expense.setCategory("Food");
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> expenseService.updateExpense(expense));
     }
 
     @Test
@@ -81,6 +117,15 @@ public class ExpenseServiceImplIntegrationTest {
         // Assert
         assertTrue(isDeleted);
         assertFalse(expenseRepository.existsById(expense.getId()));
+    }
+
+    @Test
+    void deleteExpense_ShouldThrowResourceNotFoundException_WhenExpenseNotFound() {
+        // Arrange
+        String nonExistentId = "nonExistentId";
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> expenseService.deleteExpense(nonExistentId));
     }
 
     @Test
@@ -146,5 +191,14 @@ public class ExpenseServiceImplIntegrationTest {
         // Act & Assert
         assertTrue(expenseService.isOwner(expense.getId(), "user123"));
         assertFalse(expenseService.isOwner(expense.getId(), "user456"));
+    }
+
+    @Test
+    void isOwner_ShouldThrowResourceNotFoundException_WhenExpenseNotFound() {
+        // Arrange
+        String nonExistentId = "nonExistentId";
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> expenseService.isOwner(nonExistentId, "user123"));
     }
 }

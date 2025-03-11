@@ -213,7 +213,7 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
         for (Goal goal : activeGoals) {
             double allocation = (goal.getTargetAmount() / totalTargetAmount) * amount;
             transactionService.addTransaction(new Transaction(
-                    userId, allocation, "Savings", LocalDate.now(), "Savings allocation for goal: " + goal.getName()
+                    userId, allocation, "Savings", new Date(), "Savings allocation for goal: " + goal.getName()
             ));
 
             // Update goal progress

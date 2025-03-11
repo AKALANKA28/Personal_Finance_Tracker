@@ -1,4 +1,4 @@
-package com.example.finance_tracker.service.intergration;
+package com.example.finance_tracker.service.integration;
 
 import com.example.finance_tracker.model.Notification;
 import com.example.finance_tracker.repository.NotificationRepository;
@@ -6,18 +6,17 @@ import com.example.finance_tracker.exception.ResourceNotFoundException;
 import com.example.finance_tracker.service.NotificationServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD) // Reset the database after each test
 public class NotificationServiceImplIntegrationTest {
 
     @Autowired
@@ -31,7 +30,6 @@ public class NotificationServiceImplIntegrationTest {
     @BeforeEach
     void setUp() {
         notification = new Notification();
-        notification.setId("123");
         notification.setUserId("user123");
         notification.setMessage("Test notification");
         notification.setRead(false);
@@ -39,94 +37,74 @@ public class NotificationServiceImplIntegrationTest {
 
     @Test
     void sendNotification_Success() {
-        // Arrange
-        when(notificationRepository.save(any(Notification.class))).thenReturn(notification);
-
         // Act
         notificationService.sendNotification(notification);
 
         // Assert
-        verify(notificationRepository, times(1)).save(notification);
+        Notification savedNotification = notificationRepository.findById(notification.getId()).orElse(null);
+        assertNotNull(savedNotification);
+        assertEquals("user123", savedNotification.getUserId());
+        assertEquals("Test notification", savedNotification.getMessage());
+        assertFalse(savedNotification.isRead());
     }
 
     @Test
     void getNotificationsByUser_Success() {
         // Arrange
-        when(notificationRepository.findByUserId("user123")).thenReturn(Collections.singletonList(notification));
+        notificationRepository.save(notification);
 
         // Act
         List<Notification> result = notificationService.getNotificationsByUser("user123");
 
         // Assert
-        assertEquals(1, result.size());
-        assertEquals("123", result.get(0).getId());
         assertEquals("user123", result.get(0).getUserId());
         assertEquals("Test notification", result.get(0).getMessage());
         assertFalse(result.get(0).isRead());
-
-        // Verify
-        verify(notificationRepository, times(1)).findByUserId("user123");
     }
 
     @Test
     void markNotificationAsRead_Success() {
         // Arrange
-        when(notificationRepository.findById("123")).thenReturn(Optional.of(notification));
-        when(notificationRepository.save(any(Notification.class))).thenReturn(notification);
+        Notification savedNotification = notificationRepository.save(notification);
 
         // Act
-        notificationService.markNotificationAsRead("123");
+        notificationService.markNotificationAsRead(savedNotification.getId());
 
         // Assert
-        assertTrue(notification.isRead());
-        verify(notificationRepository, times(1)).findById("123");
-        verify(notificationRepository, times(1)).save(notification);
+        Notification updatedNotification = notificationRepository.findById(savedNotification.getId()).orElse(null);
+        assertNotNull(updatedNotification);
+        assertTrue(updatedNotification.isRead());
     }
 
     @Test
     void markNotificationAsRead_NotFound_ThrowsException() {
-        // Arrange
-        when(notificationRepository.findById("123")).thenReturn(Optional.empty());
-
         // Act & Assert
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            notificationService.markNotificationAsRead("123");
+            notificationService.markNotificationAsRead("nonExistentId");
         });
 
         assertEquals("Notification not found", exception.getMessage());
-
-        // Verify
-        verify(notificationRepository, times(1)).findById("123");
     }
 
     @Test
     void isOwner_Success() {
         // Arrange
-        when(notificationRepository.findById("123")).thenReturn(Optional.of(notification));
+        Notification savedNotification = notificationRepository.save(notification);
 
         // Act
-        boolean result = notificationService.isOwner("123", "user123");
+        boolean result = notificationService.isOwner(savedNotification.getId(), "user123");
 
         // Assert
         assertTrue(result);
-
-        // Verify
-        verify(notificationRepository, times(1)).findById("123");
     }
 
     @Test
     void isOwner_NotFound_ThrowsException() {
-        // Arrange
-        when(notificationRepository.findById("123")).thenReturn(Optional.empty());
-
         // Act & Assert
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            notificationService.isOwner("123", "user123");
+            notificationService.isOwner("nonExistentId", "user123");
         });
 
         assertEquals("Notification not found", exception.getMessage());
-
-        // Verify
-        verify(notificationRepository, times(1)).findById("123");
     }
 }

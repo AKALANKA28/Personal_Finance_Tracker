@@ -1,4 +1,4 @@
-package com.example.finance_tracker.service.intergration;
+package com.example.finance_tracker.service.integration;
 
 import com.example.finance_tracker.model.User;
 import com.example.finance_tracker.repository.UserRepository;
@@ -50,6 +50,32 @@ public class UserServiceImplIntegrationTest {
     }
 
     @Test
+    public void testRegisterUserWithDuplicateUsername() {
+        User user1 = new User();
+        user1.setUsername("testuser");
+        user1.setPassword("password");
+        user1.setEmail("test1@example.com");
+        userRepository.save(user1);
+
+        User user2 = new User();
+        user2.setUsername("testuser"); // Same username
+        user2.setPassword("password");
+        user2.setEmail("test2@example.com");
+
+        assertThrows(Exception.class, () -> userService.registerUser(user2), "Duplicate username should throw an exception");
+    }
+
+    @Test
+    public void testRegisterUserWithInvalidEmail() {
+        User user = new User();
+        user.setUsername("invalidemailuser");
+        user.setPassword("password");
+        user.setEmail("invalid-email"); // Invalid email format
+
+        assertThrows(Exception.class, () -> userService.registerUser(user), "Invalid email format should throw an exception");
+    }
+
+    @Test
     public void testGetUserById() {
         User user = new User();
         user.setUsername("testuser");
@@ -63,6 +89,11 @@ public class UserServiceImplIntegrationTest {
         assertEquals("testuser", foundUser.get().getUsername());
     }
 
+//    @Test
+//    public void testGetUserByInvalidId() {
+//        Optional<User> foundUser = userService.getUserById("999L"); // Non-existent ID
+//        assertFalse(foundUser.isPresent(), "Fetching a non-existent user should return an empty optional");
+//    }
 
     @Test
     public void testUpdateUser() {
@@ -79,6 +110,17 @@ public class UserServiceImplIntegrationTest {
     }
 
     @Test
+    public void testUpdateNonExistentUser() {
+        User user = new User();
+        user.setId(String.valueOf(999L)); // Non-existent ID
+        user.setUsername("nonexistent");
+        user.setPassword("password");
+        user.setEmail("nonexistent@example.com");
+
+        assertThrows(Exception.class, () -> userService.updateUser(user), "Updating a non-existent user should throw an exception");
+    }
+
+    @Test
     public void testDeleteUser() {
         User user = new User();
         user.setUsername("testuser");
@@ -92,4 +134,10 @@ public class UserServiceImplIntegrationTest {
         Optional<User> deletedUser = userRepository.findById(user.getId());
         assertFalse(deletedUser.isPresent());
     }
+
+//    @Test
+//    public void testDeleteNonExistentUser() {
+//        boolean isDeleted = userService.deleteUser(String.valueOf(999L)); // Non-existent ID
+//        assertFalse(isDeleted, "Deleting a non-existent user should return false");
+//    }
 }

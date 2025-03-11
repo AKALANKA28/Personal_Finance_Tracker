@@ -14,4 +14,5 @@ public interface TransactionRepository extends MongoRepository<Transaction, Stri
     List<Transaction> findByUserIdAndTagsIn(String userId, List<String> tags);
     List<Transaction> findByIsRecurring(boolean isRecurring);
 
+
 }

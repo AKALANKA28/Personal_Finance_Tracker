@@ -73,7 +73,6 @@ public class TransactionServiceImpl implements TransactionService {
         expense.setTags(transaction.getTags());
         expense.setRecurrencePattern(transaction.getRecurrencePattern());
         expense.setRecurring(transaction.isIsRecurring());
-        expense.setEndDate(transaction.getRecurrenceEndDate());
         return expense;
     }
 
