@@ -1,5 +1,3 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/xIbq4TFL)
-
 
 Introduction
 This project is a robust and high-quality software solution designed as a Personal Finance Tracker System. The system aims to empower users to effectively manage their financial records, monitor expenses, set budgets, and analyze spending trends. With a strong emphasis on secure access and data integrity, it provides a user-friendly platform to ensure accurate and reliable financial management.
