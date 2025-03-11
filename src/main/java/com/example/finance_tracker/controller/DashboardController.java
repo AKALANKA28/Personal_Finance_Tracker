@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import static org.springframework.security.authorization.AuthorityAuthorizationManager.hasRole;
+
 @RestController
 @RequestMapping("/api/dashboard")
 @Tag(name = "Dashboard Controller", description = "APIs for fetching role-based dashboard data")
@@ -37,7 +39,7 @@ public class DashboardController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("#userId == authentication.principal.id")
+    @PreAuthorize("#userId == authentication.principal.id" )
     @Operation(
             summary = "Get user dashboard summary",
             description = "Fetch personalized financial summary for regular users."
