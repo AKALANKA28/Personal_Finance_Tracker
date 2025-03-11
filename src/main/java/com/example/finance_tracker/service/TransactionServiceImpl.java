@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service("transactionService")
 public class TransactionServiceImpl implements TransactionService {
@@ -162,6 +161,31 @@ public class TransactionServiceImpl implements TransactionService {
         return getTransaction(transaction, preferredCurrency, convertedAmount);
     }
 
+    @Override
+    public double calculateTotalIncome() {
+        List<Transaction> incomeTransactions = transactionRepository.findAllIncomeTransactions();
+        logger.info("Fetched {} income transactions for admin", incomeTransactions.size()); // Debug log
+        return incomeTransactions.stream().mapToDouble(Transaction::getAmount).sum();
+    }
+
+    @Override
+    public double calculateTotalExpenses() {
+        List<Transaction> expenseTransactions = transactionRepository.findAllExpenseTransactions();
+        logger.info("Fetched {} expense transactions for admin", expenseTransactions.size()); // Debug log
+        return expenseTransactions.stream().mapToDouble(Transaction::getAmount).sum();
+    }
+
+    @Override
+    public double calculateNetSavings(String userId) {
+        List<Transaction> incomeTransactions = transactionRepository.findIncomeTransactionsByUser(userId);
+        List<Transaction> expenseTransactions = transactionRepository.findExpenseTransactionsByUser(userId);
+
+        double totalIncome = incomeTransactions.stream().mapToDouble(Transaction::getAmount).sum();
+        double totalExpenses = expenseTransactions.stream().mapToDouble(Transaction::getAmount).sum();
+
+        logger.info("Net Savings for user {}: {}", userId, (totalIncome - totalExpenses)); // Debug log
+        return totalIncome - totalExpenses;
+    }
 
     private static Transaction getTransaction(Transaction transaction, String preferredCurrency, double convertedAmount) {
         Transaction convertedTransaction = new Transaction();

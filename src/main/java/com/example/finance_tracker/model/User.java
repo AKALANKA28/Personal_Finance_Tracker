@@ -40,6 +40,7 @@ public class User implements UserDetails {
     private List<String> roles = Collections.emptyList();
     private String baseCurrency;
 
+    @JsonIgnore
     private boolean authorities;
 
     @JsonIgnore
