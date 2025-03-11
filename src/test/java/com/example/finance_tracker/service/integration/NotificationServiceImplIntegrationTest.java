@@ -8,9 +8,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,10 +27,16 @@ public class NotificationServiceImplIntegrationTest {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
     private Notification notification;
 
     @BeforeEach
     void setUp() {
+        // Clear the notifications collection before each test
+        mongoTemplate.dropCollection(Notification.class);
+
         notification = new Notification();
         notification.setUserId("user123");
         notification.setMessage("Test notification");
@@ -41,7 +49,10 @@ public class NotificationServiceImplIntegrationTest {
         notificationService.sendNotification(notification);
 
         // Assert
-        Notification savedNotification = notificationRepository.findById(notification.getId()).orElse(null);
+        // Using MongoTemplate to verify
+        Query query = new Query(Criteria.where("id").is(notification.getId()));
+        Notification savedNotification = mongoTemplate.findOne(query, Notification.class);
+
         assertNotNull(savedNotification);
         assertEquals("user123", savedNotification.getUserId());
         assertEquals("Test notification", savedNotification.getMessage());
@@ -51,27 +62,36 @@ public class NotificationServiceImplIntegrationTest {
     @Test
     void getNotificationsByUser_Success() {
         // Arrange
-        notificationRepository.save(notification);
+        mongoTemplate.save(notification);
 
         // Act
         List<Notification> result = notificationService.getNotificationsByUser("user123");
 
         // Assert
+        assertEquals(1, result.size());
         assertEquals("user123", result.get(0).getUserId());
         assertEquals("Test notification", result.get(0).getMessage());
         assertFalse(result.get(0).isRead());
+
+        // Verify with MongoTemplate
+        Query query = new Query(Criteria.where("userId").is("user123"));
+        List<Notification> mongoResult = mongoTemplate.find(query, Notification.class);
+        assertEquals(1, mongoResult.size());
     }
 
     @Test
     void markNotificationAsRead_Success() {
         // Arrange
-        Notification savedNotification = notificationRepository.save(notification);
+        Notification savedNotification = mongoTemplate.save(notification);
 
         // Act
         notificationService.markNotificationAsRead(savedNotification.getId());
 
         // Assert
-        Notification updatedNotification = notificationRepository.findById(savedNotification.getId()).orElse(null);
+        // Verify with MongoTemplate
+        Query query = new Query(Criteria.where("id").is(savedNotification.getId()));
+        Notification updatedNotification = mongoTemplate.findOne(query, Notification.class);
+
         assertNotNull(updatedNotification);
         assertTrue(updatedNotification.isRead());
     }
@@ -84,18 +104,29 @@ public class NotificationServiceImplIntegrationTest {
         });
 
         assertEquals("Notification not found", exception.getMessage());
+
+        // Verify with MongoTemplate that notification doesn't exist
+        Query query = new Query(Criteria.where("id").is("nonExistentId"));
+        Notification nonExistentNotification = mongoTemplate.findOne(query, Notification.class);
+        assertNull(nonExistentNotification);
     }
 
     @Test
     void isOwner_Success() {
         // Arrange
-        Notification savedNotification = notificationRepository.save(notification);
+        Notification savedNotification = mongoTemplate.save(notification);
 
         // Act
         boolean result = notificationService.isOwner(savedNotification.getId(), "user123");
 
         // Assert
         assertTrue(result);
+
+        // Verify with MongoTemplate
+        Query query = new Query(Criteria.where("id").is(savedNotification.getId())
+                .and("userId").is("user123"));
+        Notification foundNotification = mongoTemplate.findOne(query, Notification.class);
+        assertNotNull(foundNotification);
     }
 
     @Test
@@ -106,5 +137,42 @@ public class NotificationServiceImplIntegrationTest {
         });
 
         assertEquals("Notification not found", exception.getMessage());
+
+        // Verify with MongoTemplate that notification doesn't exist
+        Query query = new Query(Criteria.where("id").is("nonExistentId"));
+        Notification nonExistentNotification = mongoTemplate.findOne(query, Notification.class);
+        assertNull(nonExistentNotification);
+    }
+
+    @Test
+    void getNotificationsByUser_NoNotifications_ReturnsEmptyList() {
+        // Act
+        List<Notification> result = notificationService.getNotificationsByUser("nonExistentUser");
+
+        // Assert
+        assertTrue(result.isEmpty());
+
+        // Verify with MongoTemplate
+        Query query = new Query(Criteria.where("userId").is("nonExistentUser"));
+        List<Notification> mongoResult = mongoTemplate.find(query, Notification.class);
+        assertTrue(mongoResult.isEmpty());
+    }
+
+    @Test
+    void isOwner_WrongUser_ReturnsFalse() {
+        // Arrange
+        Notification savedNotification = mongoTemplate.save(notification);
+
+        // Act
+        boolean result = notificationService.isOwner(savedNotification.getId(), "wrongUser");
+
+        // Assert
+        assertFalse(result);
+
+        // Verify with MongoTemplate
+        Query query = new Query(Criteria.where("id").is(savedNotification.getId())
+                .and("userId").is("wrongUser"));
+        Notification foundNotification = mongoTemplate.findOne(query, Notification.class);
+        assertNull(foundNotification);
     }
 }

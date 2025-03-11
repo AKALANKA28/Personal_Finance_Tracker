@@ -41,6 +41,7 @@ public class BudgetServiceImpl implements BudgetService {
         String baseCurrency = currencyUtil.getBaseCurrencyForUser(budget.getUserId());
         budget.setCurrencyCode(baseCurrency);
         budget.setStartDate(new Date());
+
         logger.info("Setting budget for user: {}", budget.getUserId());
         Budget savedBudget = budgetRepository.save(budget);
         logger.debug("Budget saved successfully: {}", savedBudget);

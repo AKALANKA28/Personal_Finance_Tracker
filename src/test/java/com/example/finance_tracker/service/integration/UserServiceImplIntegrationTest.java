@@ -7,6 +7,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -20,14 +23,15 @@ public class UserServiceImplIntegrationTest {
     private UserServiceImpl userService;
 
     @Autowired
-    private UserRepository userRepository;
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private MongoTemplate mongoTemplate;
 
     @BeforeEach
     public void setUp() {
-        userRepository.deleteAll(); // Clear the database before each test
+        // Clear the user collection before each test
+        mongoTemplate.dropCollection(User.class);
     }
 
     @Test
@@ -43,20 +47,23 @@ public class UserServiceImplIntegrationTest {
         assertEquals("testuser", registeredUser.getUsername());
         assertTrue(passwordEncoder.matches("password", registeredUser.getPassword()));
 
-        // Verify that the user was saved in the database
-        Optional<User> savedUser = userRepository.findByUsername("testuser");
-        assertTrue(savedUser.isPresent());
-        assertEquals("test@example.com", savedUser.get().getEmail());
+        // Verify that the user was saved in the database using MongoTemplate
+        Query query = new Query(Criteria.where("username").is("testuser"));
+        User savedUser = mongoTemplate.findOne(query, User.class);
+        assertNotNull(savedUser);
+        assertEquals("test@example.com", savedUser.getEmail());
     }
 
     @Test
     public void testRegisterUserWithDuplicateUsername() {
+        // Create and save first user with MongoTemplate
         User user1 = new User();
         user1.setUsername("testuser");
         user1.setPassword("password");
         user1.setEmail("test1@example.com");
-        userRepository.save(user1);
+        mongoTemplate.save(user1);
 
+        // Attempt to create second user with the same username
         User user2 = new User();
         user2.setUsername("testuser"); // Same username
         user2.setPassword("password");
@@ -77,11 +84,12 @@ public class UserServiceImplIntegrationTest {
 
     @Test
     public void testGetUserById() {
+        // Create and save user with MongoTemplate
         User user = new User();
         user.setUsername("testuser");
         user.setPassword("password");
         user.setEmail("test@example.com");
-        userRepository.save(user);
+        mongoTemplate.save(user);
 
         Optional<User> foundUser = userService.getUserById(user.getId());
 
@@ -89,30 +97,37 @@ public class UserServiceImplIntegrationTest {
         assertEquals("testuser", foundUser.get().getUsername());
     }
 
-//    @Test
-//    public void testGetUserByInvalidId() {
-//        Optional<User> foundUser = userService.getUserById("999L"); // Non-existent ID
-//        assertFalse(foundUser.isPresent(), "Fetching a non-existent user should return an empty optional");
-//    }
+    @Test
+    public void testGetUserByInvalidId() {
+        Optional<User> foundUser = userService.getUserById("nonexistentId");
+        assertFalse(foundUser.isPresent(), "Fetching a non-existent user should return an empty optional");
+    }
 
     @Test
     public void testUpdateUser() {
+        // Create and save user with MongoTemplate
         User user = new User();
         user.setUsername("testuser");
         user.setPassword("password");
         user.setEmail("test@example.com");
-        userRepository.save(user);
+        mongoTemplate.save(user);
 
         user.setEmail("updated@example.com");
         User updatedUser = userService.updateUser(user);
 
         assertEquals("updated@example.com", updatedUser.getEmail());
+
+        // Verify the update with MongoTemplate
+        Query query = new Query(Criteria.where("_id").is(user.getId()));
+        User foundUser = mongoTemplate.findOne(query, User.class);
+        assertNotNull(foundUser);
+        assertEquals("updated@example.com", foundUser.getEmail());
     }
 
     @Test
     public void testUpdateNonExistentUser() {
         User user = new User();
-        user.setId(String.valueOf(999L)); // Non-existent ID
+        user.setId("nonexistentId"); // Non-existent ID
         user.setUsername("nonexistent");
         user.setPassword("password");
         user.setEmail("nonexistent@example.com");
@@ -122,22 +137,25 @@ public class UserServiceImplIntegrationTest {
 
     @Test
     public void testDeleteUser() {
+        // Create and save user with MongoTemplate
         User user = new User();
         user.setUsername("testuser");
         user.setPassword("password");
         user.setEmail("test@example.com");
-        userRepository.save(user);
+        mongoTemplate.save(user);
 
         boolean isDeleted = userService.deleteUser(user.getId());
         assertTrue(isDeleted);
 
-        Optional<User> deletedUser = userRepository.findById(user.getId());
-        assertFalse(deletedUser.isPresent());
+        // Verify deletion with MongoTemplate
+        Query query = new Query(Criteria.where("_id").is(user.getId()));
+        User deletedUser = mongoTemplate.findOne(query, User.class);
+        assertNull(deletedUser);
     }
 
-//    @Test
-//    public void testDeleteNonExistentUser() {
-//        boolean isDeleted = userService.deleteUser(String.valueOf(999L)); // Non-existent ID
-//        assertFalse(isDeleted, "Deleting a non-existent user should return false");
-//    }
+    @Test
+    public void testDeleteNonExistentUser() {
+        boolean isDeleted = userService.deleteUser("nonexistentId");
+        assertFalse(isDeleted, "Deleting a non-existent user should return false");
+    }
 }

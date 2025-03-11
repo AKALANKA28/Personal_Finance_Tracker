@@ -34,7 +34,7 @@ public class ExchangeRateController {
     })
     public ResponseEntity<Map<String, Double>> getLatestExchangeRates(
             @Parameter(description = "Base currency code (e.g., LKR, EUR)", required = true, example = "LKR")
-            @RequestParam String baseCurrency) {
+            @RequestParam(defaultValue = "LKR") String baseCurrency) {
         Map<String, Double> rates = exchangeRateService.getLatestExchangeRates(baseCurrency);
         return ResponseEntity.ok(rates);
     }
@@ -57,7 +57,7 @@ public class ExchangeRateController {
             @Parameter(description = "Amount to convert", required = true, example = "100.0")
             @RequestParam double amount,
             @Parameter(description = "Base currency code (e.g., LKR)", required = true, example = "LKR")
-            @RequestParam String baseCurrency) {
+            @RequestParam(defaultValue = "LKR") String baseCurrency) {
         double convertedAmount = exchangeRateService.convertCurrency(fromCurrency, toCurrency, amount, baseCurrency);
         return ResponseEntity.ok(convertedAmount);
     }
@@ -78,7 +78,7 @@ public class ExchangeRateController {
             @Parameter(description = "Amount to convert", required = true, example = "100.0")
             @RequestParam double amount,
             @Parameter(description = "Base currency code (e.g., LKR)", required = true, example = "LKR")
-            @RequestParam String baseCurrency) {
+            @RequestParam(defaultValue = "LKR") String baseCurrency) {
         double convertedAmount = exchangeRateService.convertToBaseCurrency(currencyCode, amount, baseCurrency);
         return ResponseEntity.ok(convertedAmount);
     }
