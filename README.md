@@ -51,17 +51,17 @@ Since this is a **private repository**, you need authentication to clone it. You
       - Create an application.properties or application.yml file in the src/main/resources directory.
       - Add the necessary configuration properties. For example:
         
-          properties
-          spring.data.mongodb.uri=mongodb+srv://username:password@cluster0.mongodb.net/?retryWrites=true&w=majority
-          spring.data.mongodb.database=db_name
-        
-          jwt.secret=your_jwt_token
-          jwt.expiration=expiration_time
-        
-          server.port=8080 (optional)
-        
-          exchange.rate.api.key=your_exchange_rate_api_key
-          exchange.rate.api.url=https://v6.exchangerate-api.com/
+          ```sh
+            spring.data.mongodb.uri=mongodb+srv://username:password@cluster0.mongodb.net/?retryWrites=true&w=majority
+            spring.data.mongodb.database=db_name
+            
+            jwt.secret=your_jwt_token
+            jwt.expiration=expiration_time
+            
+            server.port=8080 (optional)
+          
+            exchange.rate.api.key=your_exchange_rate_api_key
+            exchange.rate.api.url=https://v6.exchangerate-api.com/
 
      
   6. **Set up the database**:
