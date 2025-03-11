@@ -22,11 +22,8 @@ import java.util.stream.Collectors;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-//@Document(collection = "users")
-
+@Document(collection = "user")
 public class User implements UserDetails {
-
-    // Getters and Setters
 
     private String id;
     @NotNull(message = "Username is required")
@@ -43,7 +40,6 @@ public class User implements UserDetails {
     private List<String> roles = Collections.emptyList();
     private String baseCurrency;
 
-    @JsonIgnore
     private boolean authorities;
 
     @JsonIgnore
