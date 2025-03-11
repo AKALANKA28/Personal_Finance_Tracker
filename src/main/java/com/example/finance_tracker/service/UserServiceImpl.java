@@ -2,7 +2,7 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.User;
 import com.example.finance_tracker.repository.UserRepository;
-import com.example.finance_tracker.util.UserNotFoundException;
+import com.example.finance_tracker.exception.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.password.PasswordEncoder;

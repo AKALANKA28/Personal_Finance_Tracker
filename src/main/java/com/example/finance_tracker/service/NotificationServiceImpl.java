@@ -2,7 +2,7 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.Notification;
 import com.example.finance_tracker.repository.NotificationRepository;
-import com.example.finance_tracker.util.ResourceNotFoundException;
+import com.example.finance_tracker.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +38,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void markNotificationAsRead(String notificationId) {
-        Notification notification = notificationRepository.findById(notificationId).orElseThrow();
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
         notification.setRead(true);
         notificationRepository.save(notification);
     }

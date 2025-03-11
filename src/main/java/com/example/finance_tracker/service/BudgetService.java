@@ -16,4 +16,6 @@ public interface BudgetService {
 //    double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate);
 
     void allocateBudgetToGoal(String userId, String goalId, double amount);
+
+    boolean isOwner(String budgetId, String userId);
 }

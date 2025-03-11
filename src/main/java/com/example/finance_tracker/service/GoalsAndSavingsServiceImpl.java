@@ -2,7 +2,7 @@ package com.example.finance_tracker.service;
 
 import com.example.finance_tracker.model.*;
 import com.example.finance_tracker.repository.*;
-import com.example.finance_tracker.util.ResourceNotFoundException;
+import com.example.finance_tracker.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -178,7 +178,7 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
     //------------------------------ Savings ------------------------------//
 
     @Override
-    public double calculateNetSavings(String userId, LocalDate startDate, LocalDate endDate) {
+    public double calculateNetSavings(String userId, Date startDate, Date endDate) {
         // Fetch converted total income to base currency
         double totalIncome = incomeService.calculateTotalIncomeInBaseCurrency(userId);
 
@@ -213,7 +213,7 @@ public class GoalsAndSavingsServiceImpl implements GoalsAndSavingsService {
         for (Goal goal : activeGoals) {
             double allocation = (goal.getTargetAmount() / totalTargetAmount) * amount;
             transactionService.addTransaction(new Transaction(
-                    userId, allocation, "Savings", LocalDate.now(), "Savings allocation for goal: " + goal.getName()
+                    userId, allocation, "Savings", new Date(), "Savings allocation for goal: " + goal.getName()
             ));
 
             // Update goal progress

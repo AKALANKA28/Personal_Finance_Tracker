@@ -11,7 +11,7 @@ import java.util.List;
 
 @Builder
 @Document(collection = "transactions")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @ToString
+@Getter @Setter  @AllArgsConstructor @ToString
 public class Transaction {
     @Id
     private String id;
@@ -30,6 +30,10 @@ public class Transaction {
     private String recurrencePattern; // e.g., "daily", "weekly", "monthly"
     private Date recurrenceEndDate;
 
-    public Transaction(String userId, double allocation, String savings, LocalDate now, String s) {
+    public Transaction() {
+        this.date = new Date();
+    }
+
+    public Transaction(String userId, double allocation, String savings, Date now, String s) {
     }
 }

@@ -4,11 +4,13 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @Document(collection = "expenses")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @ToString
+@Getter @Setter @AllArgsConstructor @ToString
 public class Expense {
     @Id
     private String id;
@@ -20,8 +22,14 @@ public class Expense {
     private List<String> tags;
     private boolean isRecurring;
     private String recurrencePattern;
-    private Date endDate;
     private String currencyCode;
 
+    public Expense() {
+        this.date = new Date();
+        this.description = "";
+        this.tags = new ArrayList<>();
+        this.isRecurring = false;
+        this.recurrencePattern = "";
+    }
 
 }

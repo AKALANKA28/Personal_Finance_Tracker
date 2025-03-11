@@ -1,6 +1,6 @@
 package com.example.finance_tracker.service;
 
-import com.example.finance_tracker.service.api.ExchangeRateApiClient;
+import com.example.finance_tracker.service.api.ExchangeRateApiClientImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,14 +12,14 @@ import java.util.Map;
 @Service
 public class ExchangeRateService {
 
-    private final ExchangeRateApiClient apiClient;
+    private final ExchangeRateApiClientImpl apiClient;
 
-    public ExchangeRateService(ExchangeRateApiClient apiClient) {
+    public ExchangeRateService(ExchangeRateApiClientImpl apiClient) {
         this.apiClient = apiClient;
     }
 
     @Autowired
-    private CurrencyConverter currencyConverter;
+    private CurrencyConverterImpl currencyConverterImpl;
 
     /**
      * Fetches the latest exchange rates from the external API for the specified base currency.
@@ -41,13 +41,13 @@ public class ExchangeRateService {
      * Converts an amount from one currency to another using the latest exchange rates.
      */
     public double convertCurrency(String fromCurrency, String toCurrency, double amount, String baseCurrency) {
-        return currencyConverter.convertCurrency(fromCurrency, toCurrency, amount, baseCurrency);
+        return currencyConverterImpl.convertCurrency(fromCurrency, toCurrency, amount, baseCurrency);
     }
 
     /**
      * Converts an amount to the base currency (e.g., USD).
      */
     public double convertToBaseCurrency(String currencyCode, double amount, String baseCurrency) {
-        return currencyConverter.convertToBaseCurrency(currencyCode, amount, baseCurrency);
+        return currencyConverterImpl.convertToBaseCurrency(currencyCode, amount, baseCurrency);
     }
 }

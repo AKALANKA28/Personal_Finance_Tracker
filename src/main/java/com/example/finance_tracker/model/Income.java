@@ -4,10 +4,11 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Document(collection = "incomes")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @ToString
+@Getter @Setter @AllArgsConstructor @ToString
 public class Income {
     @Id
     private String id;
@@ -16,5 +17,9 @@ public class Income {
     private double amount;
     private Date date;
     private String currencyCode;
+
+    public Income() {
+        this.date = new Date();
+    }
 
 }
