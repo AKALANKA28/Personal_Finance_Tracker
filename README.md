@@ -18,73 +18,105 @@ Before you begin, ensure you have the following installed on your system:
 
 ## Installation
 
-1. **Clone the repository:**
+### 1. Clone the repository
 
-   Since this is a *private repository*, you need authentication to clone it. You can use the following method:
-   
-   ### Using HTTPS with Personal Access Token (Recommended)
-   
-   1. *Generate a Personal Access Token (PAT)*:
-      - Go to [GitHub → Settings → Developer Settings → Personal Access Tokens](https://github.com/settings/tokens)
-      - Click *Generate new token* (Use "Fine-grained tokens" for more control)
-      - Select necessary *repository permissions* (at least "read" access)
-      - Copy the token (you won't see it again)
-   
-   2. *Clone the repository using the url*:
-      ```sh
-      git clone https://github.com/SE1020-IT2070-OOP-DSA-25/project-IT22213730.git
-      ```
+Since this is a private repository, you need authentication to clone it. You can use one of the following methods:
 
-2. **Open the project in IntelliJ IDEA**:
-   - Launch IntelliJ IDEA
-   - Select Open and navigate to the cloned project directory
-   - IntelliJ will automatically detect the pom.xml file and set up the project as a Maven project
+#### Method A: Using HTTPS with Personal Access Token
 
-3. **Install dependencies**:
-   - IntelliJ will automatically download the dependencies specified in the pom.xml file
-   - If not, you can manually trigger the dependency download by running:
-     ```sh
-     mvn clean install
-     ```
+1. Generate a Personal Access Token (PAT):
+   - Go to [GitHub → Settings → Developer Settings → Personal Access Tokens](https://github.com/settings/tokens)
+   - Click *Generate new token* (Use "Fine-grained tokens" for more control)
+   - Select necessary *repository permissions* (at least "read" access)
+   - Copy the token (you won't see it again)
 
-4. **Configure environment variables**:
-   - Create an application.properties or application.yml file in the src/main/resources directory
-   - Add the necessary configuration properties. For example:
-     ```properties
-     # MongoDB Configuration
-     spring.data.mongodb.uri=mongodb+srv://username:password@cluster0.mongodb.net/?retryWrites=true&w=majority
-     spring.data.mongodb.database=db_name
+2. Clone the repository using the URL:
+   ```sh
+   git clone https://<your_github_username>:<your_personal_access_token>@github.com/SE1020-IT2070-OOP-DSA-25/project-IT22213730.git
+   ```
+   When prompted for authentication, use your GitHub username and the personal access token as the password
 
-     # JWT Configuration
-     jwt.secret=your_jwt_token
-     jwt.expiration=expiration_time
-     
-     # Exchange Rate API Configuration
-     exchange.rate.api.key=your_exchange_rate_api_key
-     exchange.rate.api.url=https://v6.exchangerate-api.com/
-     
-     # Server Configuration
-     server.port=8080
-     
-     # Logging Configuration
-     logging.level.org.springframework=INFO
-     logging.level.com.example=DEBUG
-     
-     # Actuator Endpoints (for monitoring)
-     management.endpoints.web.exposure.include=*
-     ```
+#### Method B: Clone directly using IDE (Recommended for beginners)
 
-5. **Set up the database**:
-   - Ensure your database server (e.g., MongoDB) is running
-   - Create a database with the name specified in the spring.data.mongodb.uri property
+1. Using IntelliJ IDEA:
+   - Go to File → New → Project from Version Control
+   - Enter the repository URL: `https://github.com/SE1020-IT2070-OOP-DSA-25/project-IT22213730.git`
+   - Click Clone
+   - When prompted, authenticate with your GitHub credentials or use the IDE's built-in GitHub authentication
+   - IntelliJ will handle the authentication and clone the repository automatically
 
-6. **Run the application**:
-   - In IntelliJ, navigate to the main application class (e.g., ProjectApplication.java)
-   - Right-click on the class and select Run
-   - Alternatively, you can run the application from the terminal:
-     ```sh
-     mvn spring-boot:run
-     ```
+2. Using Eclipse:
+   - Go to File → Import → Git → Projects from Git → Clone URI
+   - Enter the repository URL: `https://github.com/SE1020-IT2070-OOP-DSA-25/project-IT22213730.git`
+   - Enter your GitHub credentials when prompted
+   - Follow the wizard to complete the import
+
+3. Using Visual Studio Code:
+   - Open VS Code
+   - Click on the Source Control icon in the Activity Bar
+   - Click "Clone Repository"
+   - Enter the repository URL: `https://github.com/SE1020-IT2070-OOP-DSA-25/project-IT22213730.git`
+   - Choose a location to store the cloned repository
+   - When prompted, authenticate with GitHub through VS Code's authentication flow
+
+### 2. Open the project in IntelliJ IDEA
+
+- Launch IntelliJ IDEA
+- Select Open and navigate to the cloned project directory
+- IntelliJ will automatically detect the pom.xml file and set up the project as a Maven project
+
+### 3. Install dependencies
+
+- IntelliJ will automatically download the dependencies specified in the pom.xml file
+- If not, you can manually trigger the dependency download by running:
+  
+  ```sh
+  mvn clean install
+  ```
+
+### 4. Configure environment variables
+
+- Create an application.properties or application.yml file in the src/main/resources directory
+- Add the necessary configuration properties. For example:
+  
+  ```properties
+  # MongoDB Configuration
+  spring.data.mongodb.uri=mongodb+srv://username:password@cluster0.mongodb.net/?retryWrites=true&w=majority
+  spring.data.mongodb.database=db_name
+
+  # JWT Configuration
+  jwt.secret=your_jwt_token
+  jwt.expiration=expiration_time
+  
+  # Exchange Rate API Configuration
+  exchange.rate.api.key=your_exchange_rate_api_key
+  exchange.rate.api.url=https://v6.exchangerate-api.com/
+  
+  # Server Configuration
+  server.port=8080
+  
+  # Logging Configuration
+  logging.level.org.springframework=INFO
+  logging.level.com.example=DEBUG
+  
+  # Actuator Endpoints (for monitoring)
+  management.endpoints.web.exposure.include=*
+  ```
+
+### 5. Set up the database
+
+- Ensure your database server (e.g., MongoDB) is running
+- Create a database with the name specified in the spring.data.mongodb.uri property
+
+### 6. Run the application
+
+- In IntelliJ, navigate to the main application class (e.g., ProjectApplication.java)
+- Right-click on the class and select Run
+- Alternatively, you can run the application from the terminal:
+  
+  ```sh
+  mvn spring-boot:run
+  ```
 
 ## Running the Application
 
@@ -116,6 +148,7 @@ Unit tests are used to validate the behavior of individual components and functi
 
 #### Running Unit Tests:
 To run unit tests, use the following command:
+
 ```sh
 mvn test
 ```
@@ -191,7 +224,7 @@ In IntelliJ IDEA:
 - Right-click on the test class or test method and select **Run**
 - Alternatively, you can run all tests in the project by clicking on the **Run** menu and selecting **Run 'All Tests'**
 - To run via Maven, use this command in the terminal:
-
+  
   ```sh
   mvn test
   ```
