@@ -191,6 +191,7 @@ In IntelliJ IDEA:
 - Right-click on the test class or test method and select **Run**
 - Alternatively, you can run all tests in the project by clicking on the **Run** menu and selecting **Run 'All Tests'**
 - To run via Maven, use this command in the terminal:
+  
   ```sh
   mvn test
   ```
