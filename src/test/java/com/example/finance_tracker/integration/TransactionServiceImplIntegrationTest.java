@@ -1,10 +1,8 @@
-package com.example.finance_tracker.service.integration;
+package com.example.finance_tracker.integration;
 
 import com.example.finance_tracker.TestHelper;
 import com.example.finance_tracker.model.Transaction;
 import com.example.finance_tracker.model.User;
-import com.example.finance_tracker.repository.TransactionRepository;
-import com.example.finance_tracker.repository.UserRepository;
 import com.example.finance_tracker.service.*;
 import com.example.finance_tracker.util.CurrencyUtil;
 import org.junit.jupiter.api.BeforeEach;

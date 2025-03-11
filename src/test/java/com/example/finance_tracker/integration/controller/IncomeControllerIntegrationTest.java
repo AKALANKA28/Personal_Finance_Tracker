@@ -1,4 +1,4 @@
-package com.example.finance_tracker.controller;
+package com.example.finance_tracker.integration.controller;
 
 import com.example.finance_tracker.model.Income;
 import com.example.finance_tracker.service.IncomeService;
@@ -14,7 +14,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.Collections;
-import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;

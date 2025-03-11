@@ -1,4 +1,4 @@
-package com.example.finance_tracker.controller;
+package com.example.finance_tracker.integration.controller;
 
 import com.example.finance_tracker.TestHelper;
 import com.example.finance_tracker.model.Transaction;
@@ -17,7 +17,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Arrays;
 import java.util.List;
