@@ -85,7 +85,7 @@ Once the application is running, you can access it at:
 This project uses Swagger for API documentation. You can explore the API interactively using the Swagger UI.
 
 ### Access Swagger UI
-- **Local Environment:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **Local Environment:** [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
 
 ### OpenAPI Specification
 The OpenAPI specification is available at:
