@@ -17,4 +17,10 @@ public interface TransactionService {
     List<Transaction> getTransactionsByUserInPreferredCurrency(String userId, String preferredCurrency);
 
     Transaction convertTransactionToPreferredCurrency(Transaction transaction, String preferredCurrency);
+
+    double calculateTotalIncome();
+
+    double calculateTotalExpenses();
+
+    double calculateNetSavings(String userId);
 }
