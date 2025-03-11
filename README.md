@@ -1,5 +1,5 @@
 
-### Introduction  
+## Introduction  
 
 This project is a robust and high-quality software solution designed as a Personal Finance Tracker System. The system aims to empower users to effectively manage their financial records, monitor expenses, set budgets, and analyze spending trends. With a strong emphasis on secure access and data integrity, it provides a user-friendly platform to ensure accurate and reliable financial management.
 
@@ -7,7 +7,7 @@ This documentation serves as a comprehensive guide, covering the setup, usage, a
 
 Setup Instructions
 
-### Prerequisites  
+## Prerequisites  
 Before you begin, ensure you have the following installed on your system:
 
 - Java Development Kit (JDK): Version 11 or higher (e.g., OpenJDK 11+).
@@ -17,13 +17,13 @@ Before you begin, ensure you have the following installed on your system:
 - IDE: IntelliJ IDEA (preferred for Spring development), Eclipse, or Visual Studio Code.
 
 
-### Installation  
+## Installation  
 
 1. **Clone the repository:**  
 
 Since this is a **private repository**, you need authentication to clone it. You can use one of the following methods:
 
-  ### **Method: Using HTTPS with Personal Access Token (Recommended)**
+  #### **Method: Using HTTPS with Personal Access Token (Recommended)**
   1. **Generate a Personal Access Token (PAT)**:
      - Go to [GitHub → Settings → Developer Settings → Personal Access Tokens](https://github.com/settings/tokens)
      - Click **Generate new token** (Use "Fine-grained tokens" for more control)
@@ -75,7 +75,7 @@ Since this is a **private repository**, you need authentication to clone it. You
      
             mvn spring-boot:run
 
-### Running the Application
+## Running the Application
 
 Once the application is running, you can access it at:
  - Local URL: http://localhost:8080
