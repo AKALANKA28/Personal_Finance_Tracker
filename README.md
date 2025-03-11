@@ -1,5 +1,6 @@
 
-Introduction
+### Introduction  
+
 This project is a robust and high-quality software solution designed as a Personal Finance Tracker System. The system aims to empower users to effectively manage their financial records, monitor expenses, set budgets, and analyze spending trends. With a strong emphasis on secure access and data integrity, it provides a user-friendly platform to ensure accurate and reliable financial management.
 
 This documentation serves as a comprehensive guide, covering the setup, usage, and testing of the software. Whether you're a developer or an end-user, it will help you get started quickly and understand the key features and functionalities of the system.
