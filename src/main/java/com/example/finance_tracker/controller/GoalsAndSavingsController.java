@@ -30,7 +30,7 @@ public class GoalsAndSavingsController {
         this.goalsAndSavingsService = goalsAndSavingsService;
     }
 
-    @PostMapping("/goals")
+    @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     @Operation(
             summary = "Set a new financial goal",
@@ -42,14 +42,14 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "403", description = "Unauthorized access"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Goal> setGoal(
+    public ResponseEntity<?> setGoal(
             @Parameter(description = "Goal details to create", required = true)
             @RequestBody Goal goal,
             @Parameter(description = "Authenticated user ID", required = true)
             @RequestAttribute("authenticatedUserId") String authenticatedUserId) {
         goal.setUserId(authenticatedUserId);
         Goal newGoal = goalsAndSavingsService.setGoal(goal);
-        return ResponseEntity.ok(newGoal);
+        return ResponseEntity.ok().body("Goal created successfully: " + newGoal);
     }
 
     @PutMapping("/{id}")
@@ -65,7 +65,7 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "Goal not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Goal> updateGoal(
+    public ResponseEntity<?> updateGoal(
             @Parameter(description = "ID of the goal to update", required = true)
             @PathVariable String id,
             @Parameter(description = "Updated goal details", required = true)
@@ -75,7 +75,7 @@ public class GoalsAndSavingsController {
         goal.setId(id);
         goal.setUserId(authenticatedUserId);
         Goal updatedGoal = goalsAndSavingsService.updateGoal(goal);
-        return ResponseEntity.ok(updatedGoal);
+        return ResponseEntity.ok().body("Goal updated successfully: " + updatedGoal);
     }
 
     @DeleteMapping("/{id}")
@@ -90,7 +90,7 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "Goal not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Void> deleteGoal(
+    public ResponseEntity<?> deleteGoal(
             @Parameter(description = "ID of the goal to delete", required = true)
             @PathVariable String id) {
         goalsAndSavingsService.deleteGoal(id);
@@ -109,11 +109,14 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "User not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<List<Goal>> getGoalsByUser(
+    public ResponseEntity<?> getGoalsByUser(
             @Parameter(description = "ID of the user to retrieve goals for", required = true)
             @PathVariable String userId) {
         List<Goal> goals = goalsAndSavingsService.getGoalsByUser(userId);
-        return ResponseEntity.ok(goals);
+        if (goals.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.OK).body("No goals found for user: " + userId);
+        }
+        return ResponseEntity.ok().body("Goals retrieved successfully: " + goals);
     }
 
     @GetMapping("/{id}")
@@ -128,11 +131,11 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "Goal not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Goal> getGoalById(
+    public ResponseEntity<?> getGoalById(
             @Parameter(description = "ID of the goal to retrieve", required = true)
             @PathVariable String id) {
         Goal goal = goalsAndSavingsService.getGoalById(id);
-        return ResponseEntity.ok(goal);
+        return ResponseEntity.ok().body("Goal retrieved successfully: " + goal);
     }
 
     @PostMapping("/{id}/add-contribution")
@@ -148,13 +151,13 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "Goal not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Goal> addManualContribution(
+    public ResponseEntity<?> addManualContribution(
             @Parameter(description = "ID of the goal to add contribution to", required = true)
             @PathVariable String id,
             @Parameter(description = "Amount to contribute", required = true)
             @RequestParam double amount) {
         Goal updatedGoal = goalsAndSavingsService.addManualContribution(id, amount);
-        return ResponseEntity.ok(updatedGoal);
+        return ResponseEntity.ok().body("Contribution added successfully: " + updatedGoal);
     }
 
     @PostMapping("/{id}/track-progress")
@@ -169,11 +172,11 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "Goal not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Goal> trackGoalProgress(
+    public ResponseEntity<?> trackGoalProgress(
             @Parameter(description = "ID of the goal to track progress for", required = true)
             @PathVariable String id) {
         Goal updatedGoal = goalsAndSavingsService.trackGoalProgress(id);
-        return ResponseEntity.ok(updatedGoal);
+        return ResponseEntity.ok().body("Progress tracked successfully: " + updatedGoal);
     }
 
     @GetMapping("/{id}/remaining-amount")
@@ -188,11 +191,11 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "Goal not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Double> calculateRemainingAmountForGoal(
+    public ResponseEntity<?> calculateRemainingAmountForGoal(
             @Parameter(description = "ID of the goal to calculate remaining amount for", required = true)
             @PathVariable String id) {
         double remainingAmount = goalsAndSavingsService.calculateRemainingAmountForGoal(id);
-        return ResponseEntity.ok(remainingAmount);
+        return ResponseEntity.ok().body("Remaining amount calculated: " + remainingAmount);
     }
 
     @GetMapping("/user/{userId}/active")
@@ -207,11 +210,14 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "User not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<List<Goal>> getActiveGoals(
+    public ResponseEntity<?> getActiveGoals(
             @Parameter(description = "ID of the user to retrieve active goals for", required = true)
             @PathVariable String userId) {
         List<Goal> activeGoals = goalsAndSavingsService.getActiveGoals(userId);
-        return ResponseEntity.ok(activeGoals);
+        if (activeGoals.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.OK).body("No active goals found for user: " + userId);
+        }
+        return ResponseEntity.ok().body("Active goals retrieved successfully: " + activeGoals);
     }
 
     @GetMapping("/user/{userId}/completed")
@@ -226,11 +232,14 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "User not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<List<Goal>> getCompletedGoals(
+    public ResponseEntity<?> getCompletedGoals(
             @Parameter(description = "ID of the user to retrieve completed goals for", required = true)
             @PathVariable String userId) {
         List<Goal> completedGoals = goalsAndSavingsService.getCompletedGoals(userId);
-        return ResponseEntity.ok(completedGoals);
+        if (completedGoals.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.OK).body("No completed goals found for user: " + userId);
+        }
+        return ResponseEntity.ok().body("Completed goals retrieved successfully: " + completedGoals);
     }
 
     @GetMapping("/user/{userId}/overdue")
@@ -251,9 +260,9 @@ public class GoalsAndSavingsController {
             @PathVariable String userId) {
         List<Goal> overdueGoals = goalsAndSavingsService.getOverdueGoals(userId);
         if (overdueGoals.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.OK).body("No overdue goals found.");
+            return ResponseEntity.status(HttpStatus.OK).body("No overdue goals found for user: " + userId);
         }
-        return ResponseEntity.ok(overdueGoals);
+        return ResponseEntity.ok().body("Overdue goals retrieved successfully: " + overdueGoals);
     }
 
     @PostMapping("/check-near-overdue")
@@ -267,9 +276,9 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "403", description = "Unauthorized access"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Void> checkNearOverdueGoals() {
+    public ResponseEntity<?> checkNearOverdueGoals() {
         goalsAndSavingsService.checkAndNotifyNearOverdueGoals();
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body("Near-overdue goals checked and notifications sent successfully.");
     }
 
     @PostMapping("/{goalId}/link-budget")
@@ -285,13 +294,13 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "Goal or budget not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Void> linkBudgetToGoal(
+    public ResponseEntity<?> linkBudgetToGoal(
             @Parameter(description = "ID of the goal to link budget to", required = true)
             @PathVariable String goalId,
             @Parameter(description = "ID of the budget to link", required = true)
             @RequestParam String budgetId) {
         goalsAndSavingsService.linkBudgetToGoal(goalId, budgetId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body("Budget linked successfully to goal: " + goalId);
     }
 
     @PostMapping("/net-savings/{userId}/")
@@ -307,7 +316,7 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "User not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Double> calculateNetSavings(
+    public ResponseEntity<?> calculateNetSavings(
             @Parameter(description = "ID of the user to calculate net savings for", required = true)
             @PathVariable String userId,
             @Parameter(description = "Start date (format: yyyy-MM-dd)", required = true)
@@ -319,9 +328,9 @@ public class GoalsAndSavingsController {
             Date start = dateFormat.parse(startDate);
             Date end = dateFormat.parse(endDate);
             double netSavings = goalsAndSavingsService.calculateNetSavings(userId, start, end);
-            return ResponseEntity.ok(netSavings);
+            return ResponseEntity.ok().body("Net savings calculated: " + netSavings);
         } catch (ParseException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body("Invalid date format. Please use yyyy-MM-dd.");
         }
     }
 
@@ -338,13 +347,13 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "User not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Void> allocateSavings(
+    public ResponseEntity<?> allocateSavings(
             @Parameter(description = "ID of the user to allocate savings for", required = true)
             @PathVariable String userId,
             @Parameter(description = "Amount to allocate", required = true)
             @RequestParam double amount) {
         goalsAndSavingsService.allocateSavings(userId, amount);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body("Savings allocated successfully to active goals.");
     }
 
     @GetMapping("/user/{userId}/total-savings")
@@ -359,10 +368,10 @@ public class GoalsAndSavingsController {
             @ApiResponse(responseCode = "404", description = "User not found"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Double> calculateTotalSavings(
+    public ResponseEntity<?> calculateTotalSavings(
             @Parameter(description = "ID of the user to calculate total savings for", required = true)
             @PathVariable String userId) {
         double totalSavings = goalsAndSavingsService.calculateTotalSavings(userId);
-        return ResponseEntity.ok(totalSavings);
+        return ResponseEntity.ok().body("Total savings calculated: " + totalSavings);
     }
 }

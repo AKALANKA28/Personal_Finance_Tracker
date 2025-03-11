@@ -1,4 +1,4 @@
-package com.example.finance_tracker.config;
+package com.example.finance_tracker.exception;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;

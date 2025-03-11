@@ -1,5 +1,6 @@
 package com.example.finance_tracker.config;
 
+import com.example.finance_tracker.exception.CustomAccessDeniedHandler;
 import com.example.finance_tracker.filter.JwtRequestFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
