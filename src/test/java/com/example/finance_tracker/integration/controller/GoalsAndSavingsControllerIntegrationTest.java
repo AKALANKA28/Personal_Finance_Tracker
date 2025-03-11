@@ -1,8 +1,7 @@
-package com.example.finance_tracker.controller;
+package com.example.finance_tracker.integration.controller;
 
 import com.example.finance_tracker.model.Goal;
 import com.example.finance_tracker.repository.GoalRepository;
-import com.example.finance_tracker.service.GoalsAndSavingsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

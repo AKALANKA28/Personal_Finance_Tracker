@@ -1,4 +1,4 @@
-package com.example.finance_tracker.service.integration;
+package com.example.finance_tracker.integration;
 
 import com.example.finance_tracker.model.Goal;
 import com.example.finance_tracker.repository.GoalRepository;

@@ -1,13 +1,8 @@
-package com.example.finance_tracker.service.unit;
+package com.example.finance_tracker.unit;
 
 import com.example.finance_tracker.model.*;
 import com.example.finance_tracker.repository.BudgetRepository;
-import com.example.finance_tracker.repository.ExpenseRepository;
 import com.example.finance_tracker.service.BudgetServiceImpl;
-import com.example.finance_tracker.service.CurrencyConverterImpl;
-import com.example.finance_tracker.service.GoalsAndSavingsService;
-import com.example.finance_tracker.service.NotificationService;
-import com.example.finance_tracker.util.CurrencyUtil;
 import com.example.finance_tracker.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
