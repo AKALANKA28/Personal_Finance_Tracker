@@ -135,7 +135,7 @@ public class ReportServiceImplIntegrationTest {
         // Act
         Map<String, Object> report = reportService.generateSpendingTrendReport(userId, startDate, endDate);
 
-        // Assert
+        // Assert //
         assertNotNull(report);
         assertEquals(userId, report.get("userId"));
         assertEquals(startDate, report.get("startDate"));
