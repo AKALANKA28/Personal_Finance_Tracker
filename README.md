@@ -80,4 +80,13 @@ Since this is a **private repository**, you need authentication to clone it. You
 Once the application is running, you can access it at:
  - Local URL: http://localhost:8080
 
+## API Documentation
 
+This project uses Swagger for API documentation. You can explore the API interactively using the Swagger UI.
+
+### Access Swagger UI
+- **Local Environment:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+### OpenAPI Specification
+The OpenAPI specification is available at:
+- **Local Environment:** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
