@@ -68,7 +68,7 @@ Since this is a **private repository**, you need authentication to clone it. You
      - Ensure your database server (e.g., MongoDB) is running.
      - Create a database with the name specified in the spring.data.mongodb.uri property.
        
-  7. **Run the application:**:
+  7. **Run the application**:
     - In IntelliJ, navigate to the main application class (e.g., ProjectApplication.java).
     - Right-click on the class and select Run.
     - Alternatively, you can run the application from the terminal:
