@@ -20,45 +20,6 @@ Before you begin, ensure you have the following installed on your system:
 
 ### 1. Clone the repository
 
-Since this is a private repository, you need authentication to clone it. You can use one of the following methods:
-
-#### Method A: Using HTTPS with Personal Access Token
-
-1. Generate a Personal Access Token (PAT):
-   - Go to [GitHub → Settings → Developer Settings → Personal Access Tokens](https://github.com/settings/tokens)
-   - Click *Generate new token* (Use "Fine-grained tokens" for more control)
-   - Select necessary *repository permissions* (at least "read" access)
-   - Copy the token (you won't see it again)
-
-2. Clone the repository using the URL:
-   ```sh
-   git clone https://<your_github_username>:<your_personal_access_token>@github.com/SE1020-IT2070-OOP-DSA-25/project-IT22213730.git
-   ```
-   When prompted for authentication, use your GitHub username and the personal access token as the password
-
-#### Method B: Clone directly using IDE (Recommended for beginners)
-
-1. Using IntelliJ IDEA:
-   - Go to File → New → Project from Version Control
-   - Enter the repository URL: `https://github.com/SE1020-IT2070-OOP-DSA-25/project-IT22213730.git`
-   - Click Clone
-   - When prompted, authenticate with your GitHub credentials or use the IDE's built-in GitHub authentication
-   - IntelliJ will handle the authentication and clone the repository automatically
-
-2. Using Eclipse:
-   - Go to File → Import → Git → Projects from Git → Clone URI
-   - Enter the repository URL: `https://github.com/SE1020-IT2070-OOP-DSA-25/project-IT22213730.git`
-   - Enter your GitHub credentials when prompted
-   - Follow the wizard to complete the import
-
-3. Using Visual Studio Code:
-   - Open VS Code
-   - Click on the Source Control icon in the Activity Bar
-   - Click "Clone Repository"
-   - Enter the repository URL: `https://github.com/SE1020-IT2070-OOP-DSA-25/project-IT22213730.git`
-   - Choose a location to store the cloned repository
-   - When prompted, authenticate with GitHub through VS Code's authentication flow
-
 ### 2. Open the project in IntelliJ IDEA
 
 - Launch IntelliJ IDEA
